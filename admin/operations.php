@@ -853,7 +853,9 @@ if ($view === 'reports' && isset($_GET['export']) && $_GET['export'] === 'csv' &
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Order, Inventory &amp; Customer Management • 4K STORE</title>
+    <title>Admin Dashboard • 4K STORE</title>
+    <link rel="icon" href="../home/logo/logome.png" type="image/x-icon">
+    <link rel="apple-touch-icon" href="../home/logo/logome.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="../home/page.css?v=<?= filemtime(__DIR__ . '/../home/page.css') ?>">
     <link rel="stylesheet" href="../home/fashion-theme.css?v=<?= filemtime(__DIR__ . '/../home/fashion-theme.css') ?>">
