@@ -1164,17 +1164,31 @@ $inventoryUnits = (int) $inventoryResult->fetch_assoc()['units'];
                     <?php if ($isEditing): ?>
                         <input type="hidden" name="id" value="<?= (int) $id ?>">
                     <?php endif; ?>
+
+                    <?php if (!$isEditing): ?>
+                    <div class="form-group" id="productLinkGroup">
+                        <label><i class="fas fa-link" style="color: var(--cyber-cyan); margin-right: 6px;"></i> Product Link (Auto-fill)</label>
+                        <div style="display: flex; gap: 8px; align-items: stretch;">
+                            <input type="url" id="productLinkInput" class="cyber-input" placeholder="https://shopee.com/product/... or any product page link" style="flex: 1; margin: 0;">
+                            <button type="button" id="fetchProductBtn" class="cyber-buy-action" style="padding: 10px 18px; font-size: 13px; white-space: nowrap; flex-shrink: 0;">
+                                <i class="fas fa-wand-magic-sparkles"></i> Auto Fill
+                            </button>
+                        </div>
+                        <div id="fetchStatus" style="margin-top: 6px; font-size: 12px; color: var(--cyber-cyan); display: none;"></div>
+                    </div>
+                    <?php endif; ?>
+
                     <div class="form-group">
                         <label><i class="fas fa-tag" style="color: var(--cyber-cyan); margin-right: 6px;"></i> ឈ្មោះផលិតផល (Product Name)</label>
-                        <input type="text" name="name" class="cyber-input" value="<?= htmlspecialchars($formName, ENT_QUOTES, 'UTF-8') ?>" required>
+                        <input type="text" name="name" id="fieldName" class="cyber-input" value="<?= htmlspecialchars($formName, ENT_QUOTES, 'UTF-8') ?>" required>
                     </div>
                     <div class="form-group">
                         <label><i class="fas fa-align-left" style="color: var(--cyber-purple); margin-right: 6px;"></i> ព័ត៌មានលម្អិត (Description)</label>
-                        <textarea name="description" class="cyber-input" required><?= htmlspecialchars($formDescription, ENT_QUOTES, 'UTF-8') ?></textarea>
+                        <textarea name="description" id="fieldDescription" class="cyber-input" required><?= htmlspecialchars($formDescription, ENT_QUOTES, 'UTF-8') ?></textarea>
                     </div>
                     <div class="form-group">
                         <label><i class="fas fa-coins" style="color: var(--cyber-emerald); margin-right: 6px;"></i> Cost price (your purchase cost)</label>
-                        <input type="number" step="0.01" min="0" max="99999999.99" name="cost_price" class="cyber-input" value="<?= htmlspecialchars($formCostPrice, ENT_QUOTES, 'UTF-8') ?>" placeholder="Leave empty if unknown">
+                        <input type="number" step="0.01" min="0" max="99999999.99" name="cost_price" id="fieldCostPrice" class="cyber-input" value="<?= htmlspecialchars($formCostPrice, ENT_QUOTES, 'UTF-8') ?>" placeholder="Leave empty if unknown">
                         <div class="image-url-hint">Used to calculate profit or loss. Existing products need their cost entered before profit can be calculated.</div>
                     </div>
                     <div class="form-group">
@@ -1551,6 +1565,93 @@ $inventoryUnits = (int) $inventoryResult->fetch_assoc()['units'];
                     previewWrap.style.display = "inline-flex";
                 }
             });
+
+            // ── Product link auto-fill ─────────────────────────────────────
+            const fetchBtn    = document.getElementById('fetchProductBtn');
+            const linkInput   = document.getElementById('productLinkInput');
+            const fetchStatus = document.getElementById('fetchStatus');
+
+            if (fetchBtn && linkInput) {
+                fetchBtn.addEventListener('click', async () => {
+                    const url = linkInput.value.trim();
+                    if (!url) {
+                        showStatus('សូមបញ្ចូល link ផលិតផលជាមុនសិន', 'error');
+                        return;
+                    }
+                    if (!/^https?:\/\//i.test(url)) {
+                        showStatus('Link ត្រូវចាប់ផ្តើមដោយ http:// ឬ https://', 'error');
+                        return;
+                    }
+
+                    fetchBtn.disabled = true;
+                    fetchBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading...';
+                    showStatus('កំពុង fetch ទិន្នន័យ...', 'info');
+
+                    try {
+                        const resp = await fetch('../api/scrape-product.php?url=' + encodeURIComponent(url));
+                        if (!resp.ok) throw new Error('Server error ' + resp.status);
+                        const data = await resp.json();
+
+                        if (data.error) {
+                            showStatus('❌ ' + data.error, 'error');
+                            return;
+                        }
+
+                        let filled = 0;
+
+                        if (data.name) {
+                            document.getElementById('fieldName').value = data.name;
+                            filled++;
+                        }
+                        if (data.description) {
+                            document.getElementById('fieldDescription').value = data.description;
+                            filled++;
+                        }
+                        if (data.price && parseFloat(data.price) > 0) {
+                            const costField = document.getElementById('fieldCostPrice');
+                            if (costField && costField.value === '') {
+                                costField.value = data.price;
+                                filled++;
+                            }
+                        }
+                        if (data.image) {
+                            // Switch to URL mode and fill image URL
+                            const urlRadio = document.querySelector('input[name="image_source"][value="url"]');
+                            if (urlRadio) {
+                                urlRadio.checked = true;
+                                updateImageSource();
+                            }
+                            const imgUrlInput = document.getElementById('imageUrlInput');
+                            if (imgUrlInput) {
+                                imgUrlInput.value = data.image;
+                                filled++;
+                            }
+                        }
+
+                        showStatus('✅ Auto-fill រួចរាល់! (' + filled + ' fields filled)', 'success');
+                    } catch (e) {
+                        showStatus('❌ មិនអាច fetch បាន: ' + e.message, 'error');
+                    } finally {
+                        fetchBtn.disabled = false;
+                        fetchBtn.innerHTML = '<i class="fas fa-wand-magic-sparkles"></i> Auto Fill';
+                    }
+                });
+
+                // Also trigger on Enter key in link field
+                linkInput.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        fetchBtn.click();
+                    }
+                });
+            }
+
+            function showStatus(msg, type) {
+                if (!fetchStatus) return;
+                fetchStatus.textContent = msg;
+                fetchStatus.style.display = 'block';
+                fetchStatus.style.color = type === 'error' ? '#ff8b9b' : type === 'success' ? '#4ade80' : 'var(--cyber-cyan)';
+            }
         </script>
     <?php endif; ?>
     <script src="../js/theme-mode.js?v=<?php echo filemtime(__DIR__ . '/../js/theme-mode.js'); ?>"></script>
