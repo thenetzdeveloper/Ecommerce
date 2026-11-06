@@ -137,6 +137,7 @@ if (!function_exists('ensureAdminSecuritySchema')) {
     function ensureAdminSecuritySchema(mysqli $connection): bool
     {
         $columns = [
+            'email' => 'VARCHAR(100) NULL DEFAULT NULL',
             'role' => "VARCHAR(20) NOT NULL DEFAULT 'admin'",
             'permissions' => 'TEXT NULL',
             'is_active' => 'TINYINT(1) NOT NULL DEFAULT 1',
@@ -219,6 +220,25 @@ if (!function_exists('privateReceiptDirectory')) {
         $configuredDirectory = getenv('ECOMMERCE_PRIVATE_RECEIPT_DIR');
         if ($configuredDirectory !== false && trim($configuredDirectory) !== '') {
             return trim($configuredDirectory);
+        }
+
+        $envFile = dirname(__DIR__) . DIRECTORY_SEPARATOR . '.env';
+        if (is_readable($envFile)) {
+            $lines = @file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+            if (is_array($lines)) {
+                foreach ($lines as $line) {
+                    if (preg_match('/^\s*ECOMMERCE_PRIVATE_RECEIPT_DIR\s*=\s*(.*?)\s*$/', $line, $m)) {
+                        $val = trim($m[1], " \t\n\r\0\x0B\"'");
+                        if ($val !== '') {
+                            return $val;
+                        }
+                    }
+                }
+            }
+        }
+
+        if (is_dir('C:\\xampp\\tmp\\ecommerce-private-receipts')) {
+            return 'C:\\xampp\\tmp\\ecommerce-private-receipts';
         }
 
         $documentRoot = $_SERVER['DOCUMENT_ROOT'] ?? '';

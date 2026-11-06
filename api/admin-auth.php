@@ -25,7 +25,10 @@ function adminStartSession(): bool
         'samesite' => 'Strict',
     ]);
 
-    return session_start();
+    if (headers_sent()) {
+        return false;
+    }
+    return @session_start();
 }
 
 function adminRequestIp(): string
@@ -198,9 +201,9 @@ function adminDestroySession(mysqli $connection): void
     }
 
     $_SESSION = [];
-    if (ini_get('session.use_cookies')) {
+    if (ini_get('session.use_cookies') && !headers_sent()) {
         $params = session_get_cookie_params();
-        setcookie(session_name(), '', [
+        @setcookie(session_name(), '', [
             'expires' => time() - 42000,
             'path' => $params['path'],
             'secure' => (bool) $params['secure'],

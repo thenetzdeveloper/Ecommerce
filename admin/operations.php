@@ -853,9 +853,14 @@ if ($view === 'reports' && isset($_GET['export']) && $_GET['export'] === 'csv' &
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard • 4K STORE</title>
-    <link rel="icon" href="../home/logo/logome.png" type="image/x-icon">
-    <link rel="apple-touch-icon" href="../home/logo/logome.png">
+    <?php
+    $adminStoreSettings = function_exists('getStoreSettings') ? getStoreSettings($conn) : [];
+    $adminStoreName = $adminStoreSettings['store_name'] ?? 'SN STORE';
+    $adminStoreLogo = $adminStoreSettings['store_logo_url'] ?? '';
+    ?>
+    <title>Admin Dashboard • <?= htmlspecialchars($adminStoreName, ENT_QUOTES, 'UTF-8') ?></title>
+    <link rel="icon" href="<?= htmlspecialchars(resolveStoreAssetUrl($adminStoreLogo, 'admin'), ENT_QUOTES, 'UTF-8') ?>" type="image/x-icon">
+    <link rel="apple-touch-icon" href="<?= htmlspecialchars(resolveStoreAssetUrl($adminStoreLogo, 'admin'), ENT_QUOTES, 'UTF-8') ?>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="../home/page.css?v=<?= filemtime(__DIR__ . '/../home/page.css') ?>">
     <link rel="stylesheet" href="../home/fashion-theme.css?v=<?= filemtime(__DIR__ . '/../home/fashion-theme.css') ?>">

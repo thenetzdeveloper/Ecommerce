@@ -1,997 +1,2314 @@
-.fashion-storefront {
-    --bg-dark: #f7f4ef;
-    --bg-gradient: #f7f4ef;
-    --cyber-cyan: #98664f;
-    --cyber-blue: #b17b60;
-    --cyber-purple: #765c4b;
-    --cyber-pink: #b87470;
-    --cyber-emerald: #68765e;
-    --cyber-amber: #9a7950;
-    --card-bg: #fff;
-    --card-border: #e7dfd6;
-    --text-white: #2e2924;
-    --text-muted: #756d64;
-    --text-dim: #958b80;
-    --radius-card: 4px;
-    color-scheme: light;
-    min-height: 100vh;
-    background: #f7f4ef;
-    color: #2e2924;
-}
-
-.fashion-storefront .cyber-grid-lines {
-    display: none;
-}
-
-.fashion-storefront .cyber-nav-container {
-    top: 0;
-    padding: 0 clamp(12px, 4vw, 48px);
-    background: rgba(255, 255, 255, 0.96);
-    border-bottom: 1px solid #e8e1d8;
-    transition: background-color 180ms ease, border-color 180ms ease;
-}
-
-.fashion-storefront .cyber-island-nav {
-    max-width: 1320px;
-    padding: 12px 0;
-    border: 0;
-    border-radius: 0;
-    background: transparent;
-    box-shadow: none;
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
-}
-
-.fashion-storefront .brand-hologram-cube {
-    border: 1px solid #e7ddd2;
-    border-radius: 50%;
-    background: #f5f0e9;
-    box-shadow: none;
-}
-
-.fashion-storefront .brand-hologram-cube img {
-    filter: none;
-}
-
-.fashion-storefront .brand-titles h1 {
-    background: none;
-    color: #302923;
-    -webkit-text-fill-color: #302923;
-    font-family: 'Outfit', 'Kantumruy Pro', sans-serif;
-    letter-spacing: 0.08em;
-}
-
-.fashion-storefront .dna-badge {
-    border-color: #ded2c5;
-    background: #f5f0e9;
-    color: #805f4b;
-    box-shadow: none;
-}
-
-.fashion-storefront .brand-titles > span {
-    color: #81766d;
-}
-
-.fashion-storefront .nav-hologram-links {
-    gap: 3px;
-    border: 0;
-    border-radius: 0;
-    background: transparent;
-}
-
-.fashion-storefront .nav-tab-btn {
-    color: #625b54;
-    border: 1px solid transparent;
-    border-radius: 2px;
-    font-size: 13px;
-    letter-spacing: 0.01em;
-}
-
-.fashion-storefront .nav-tab-btn:hover,
-.fashion-storefront .nav-tab-btn.active {
-    border-color: transparent;
-    background: transparent;
-    color: #9a6048;
-    box-shadow: inset 0 -2px #9a6048;
-}
-
-.fashion-storefront .nav-actions > .cyber-glow-btn {
-    border: 1px solid #332d28 !important;
-    border-radius: 2px;
-    background: #332d28 !important;
-    color: #fff;
-    box-shadow: none;
-}
-
-.fashion-storefront .nav-actions > .cyber-glow-btn:hover {
-    border-color: #805f4b !important;
-    background: #805f4b !important;
-    box-shadow: none;
-    transform: translateY(-1px);
-}
-
-.fashion-storefront .nav-actions .fa-telegram-plane {
-    color: #fff !important;
-}
-
-.fashion-storefront .mobile-nav-toggle {
-    border-color: #ded2c5;
-    background: #f5f0e9;
-    color: #332d28;
-}
-
-.fashion-storefront .mobile-menu-drawer {
-    border: 1px solid #e7dfd6;
-    border-radius: 4px;
-    background: #fff;
-    box-shadow: 0 18px 45px rgba(48, 41, 35, 0.12);
-}
-
-.fashion-storefront .mobile-menu-drawer .nav-tab-btn {
-    color: #514a43;
-}
-
-.fashion-storefront .hero-deck {
-    max-width: 1320px;
-    margin: 38px auto 0;
-    padding: 0 clamp(16px, 4vw, 48px);
-}
-
-.fashion-storefront .cyber-hud-bar {
-    display: none;
-}
-
-.fashion-storefront .hero-centerpiece {
-    min-height: 400px;
-    padding: clamp(34px, 7vw, 84px);
-    border: 0;
-    border-radius: 4px;
-    background:
-        radial-gradient(ellipse at 82% 34%, rgba(193, 156, 126, 0.2), transparent 34%),
-        linear-gradient(112deg, #efe5d9 0%, #f5eee6 55%, #eee3d7 100%);
-    box-shadow: none;
-    backdrop-filter: none;
-}
-
-.fashion-storefront .hero-text-side {
-    max-width: 660px;
-}
-
-.fashion-storefront .hero-tag-pill {
-    padding: 0;
-    border: 0;
-    border-radius: 0;
-    background: transparent;
-    color: #916348;
-    font-size: 11px;
-    letter-spacing: 0.14em;
-}
-
-.fashion-storefront .hero-centerpiece h2 {
-    max-width: 660px;
-    color: #302923;
-    background: none;
-    -webkit-text-fill-color: #302923;
-    font-family: Georgia, 'Kantumruy Pro', serif;
-    font-size: clamp(34px, 5.2vw, 60px);
-    font-weight: 500;
-    letter-spacing: -0.035em;
-    line-height: 1.18;
-}
-
-.fashion-storefront .hero-centerpiece p {
-    max-width: 580px;
-    color: #6f665e;
-    font-size: 15px;
-    line-height: 1.85;
-}
-
-.fashion-storefront .fashion-shop-cta {
-    display: inline-flex;
-    align-items: center;
-    gap: 28px;
-    min-height: 48px;
-    margin-top: 24px;
-    padding: 0 20px;
-    border: 1px solid #332d28;
-    border-radius: 2px;
-    background: #332d28;
-    color: #fff;
-    font-size: 13px;
-    font-weight: 600;
-    text-decoration: none;
-    transition: background-color 180ms ease, border-color 180ms ease, transform 180ms ease;
-}
-
-.fashion-storefront .fashion-shop-cta:hover {
-    transform: translateY(-2px);
-    border-color: #805f4b;
-    background: #805f4b;
-}
-
-.fashion-storefront .hero-stats-row {
-    gap: clamp(18px, 3vw, 34px);
-    margin-top: 30px;
-}
-
-.fashion-storefront .stat-num {
-    color: #302923;
-    font-family: 'Outfit', 'Kantumruy Pro', sans-serif;
-    font-size: 20px;
-    font-weight: 600;
-}
-
-.fashion-storefront .stat-num span {
-    color: #9a6048;
-}
-
-.fashion-storefront .stat-label {
-    color: #81766d;
-    letter-spacing: 0.08em;
-}
-
-.fashion-storefront .hero-visual-side {
-    position: relative;
-    width: min(34vw, 330px);
-    height: 300px;
-    border-radius: 48% 48% 4px 4px;
-    background: linear-gradient(145deg, rgba(255, 255, 255, 0.42), rgba(211, 188, 166, 0.48));
-    flex-direction: column;
-    gap: 8px;
-}
-
-.fashion-storefront .hero-managed-banner {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    border-radius: inherit;
-    object-fit: cover;
-    opacity: 0.72;
-}
-
-.fashion-storefront .hero-brand-caption {
-    position: relative;
-    z-index: 1;
-    color: #805f4b;
-    font-size: 10px;
-    font-weight: 600;
-    letter-spacing: 0.2em;
-}
-
-.fashion-storefront .hero-brand-mark {
-    position: relative;
-    z-index: 1;
-    color: #805f4b;
-    font-family: Georgia, 'Kantumruy Pro', serif;
-    font-size: clamp(84px, 11vw, 132px);
-    font-weight: 500;
-    letter-spacing: -0.1em;
-    line-height: 1;
-    padding-right: 0.1em;
-}
-
-.fashion-storefront .catalog-header {
-    max-width: 1320px;
-    margin: 82px auto 28px;
-    padding: 0 clamp(16px, 4vw, 48px);
-    text-align: left;
-}
-
-.fashion-storefront .catalog-kicker {
-    color: #98664f;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.16em;
-}
-
-.fashion-storefront .catalog-header h2 {
-    margin-top: 10px;
-    color: #302923;
-    background: none;
-    -webkit-text-fill-color: #302923;
-    font-family: Georgia, 'Kantumruy Pro', serif;
-    font-size: clamp(27px, 3vw, 38px);
-    font-weight: 500;
-    letter-spacing: -0.025em;
-}
-
-.fashion-storefront .catalog-header p {
-    margin-top: 7px;
-    color: #756d64;
-    font-size: 14px;
-}
-
-.fashion-storefront .cyber-cards-matrix {
-    max-width: 1320px;
-    padding: 0 clamp(16px, 4vw, 48px) 64px;
-    grid-template-columns: repeat(auto-fill, minmax(235px, 1fr));
-    gap: 20px;
-}
-
-.fashion-storefront .cyber-card {
-    align-items: stretch;
-    padding: 12px 12px 16px;
-    border: 1px solid #e8e1d8;
-    border-radius: 3px;
-    background: #fff;
-    text-align: left;
-    box-shadow: 0 4px 18px rgba(48, 41, 35, 0.035);
-    transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
-}
-
-.fashion-storefront .cyber-card::after {
-    display: none;
-}
-
-.fashion-storefront .cyber-card:hover {
-    transform: translateY(-3px);
-    border-color: #d0b9a6;
-    box-shadow: 0 14px 30px rgba(48, 41, 35, 0.1);
-}
-
-.fashion-storefront .card-top-tag {
-    z-index: 1;
-    top: 22px;
-    right: 22px;
-    padding: 5px 9px;
-    border: 0;
-    border-radius: 2px;
-    background: rgba(255, 255, 255, 0.94);
-    color: #526047;
-    font-size: 9px;
-    letter-spacing: 0.1em;
-}
-
-.fashion-storefront .card-top-tag.hot {
-    background: #f7ebe5;
-    color: #995d48;
-}
-
-.fashion-storefront .card-hologram-frame {
-    width: 100%;
-    height: 206px;
-    margin: 0 0 16px;
-    padding: 22px;
-    border: 0;
-    border-radius: 2px;
-    background: #f4f0ea;
-    box-shadow: none;
-}
-
-.fashion-storefront .cyber-card:hover .card-hologram-frame {
-    transform: none;
-    border-color: transparent;
-    box-shadow: none;
-}
-
-.fashion-storefront .card-hologram-frame img {
-    filter: none;
-}
-
-.fashion-storefront .card-app-title {
-    margin: 0 0 5px;
-    color: #302923;
-    font-size: 16px;
-    font-weight: 600;
-    letter-spacing: 0;
-}
-
-.fashion-storefront .card-feature-specs {
-    justify-content: flex-start;
-    margin-bottom: 12px;
-    color: #81766d;
-    font-size: 11px;
-}
-
-.fashion-storefront .cyber-price-pill {
-    align-self: flex-start;
-    margin: auto 0 14px;
-    padding: 0;
-    border: 0;
-    border-radius: 0;
-    background: transparent;
-    color: #302923;
-    font-family: 'Outfit', 'Kantumruy Pro', sans-serif;
-    font-size: 17px;
-    box-shadow: none;
-}
-
-.fashion-storefront .cyber-price-pill span {
-    color: #81766d;
-}
-
-.fashion-storefront .cyber-card .cyber-buy-action {
-    min-height: 42px;
-    padding: 10px 12px;
-    border: 1px solid #332d28;
-    border-radius: 2px;
-    background: #332d28;
-    color: #fff;
-    font-size: 12px;
-    font-weight: 600;
-    box-shadow: none;
-}
-
-.fashion-storefront .cyber-card .cyber-buy-action:hover {
-    transform: translateY(-1px);
-    background: #805f4b;
-    box-shadow: none;
-}
-
-.fashion-storefront .cyber-trust-grid {
-    max-width: 1224px;
-    margin: 0 auto 70px;
-    padding: 0 24px;
-    gap: 12px;
-}
-
-.fashion-storefront .cyber-trust-card {
-    border: 1px solid #e8e1d8;
-    border-radius: 3px;
-    background: #fff;
-    box-shadow: none;
-}
-
-.fashion-storefront .cyber-trust-card:hover {
-    border-color: #d0b9a6;
-    background: #fff;
-    box-shadow: 0 8px 22px rgba(48, 41, 35, 0.07);
-}
-
-.fashion-storefront .trust-glow-icon {
-    border: 1px solid #e8ddd2;
-    border-radius: 50%;
-    background: #f7f1eb;
-    color: #98664f !important;
-    box-shadow: none;
-}
-
-.fashion-storefront .trust-texts h4 {
-    color: #302923;
-}
-
-.fashion-storefront .trust-texts p {
-    color: #81766d;
-}
-
-.fashion-storefront .cyber-footer {
-    max-width: 1320px;
-    margin: 0 auto 30px;
-    padding: 36px clamp(20px, 5vw, 54px);
-    border: 1px solid #e8e1d8;
-    border-radius: 3px;
-    background: #fff;
-    box-shadow: 0 8px 30px rgba(48, 41, 35, 0.045);
-    text-align: left;
-}
-
-.fashion-storefront .cyber-footer h3 {
-    color: #302923;
-}
-
-.fashion-storefront .bank-cyber-chip {
-    border-color: #e8e1d8;
-    border-radius: 3px;
-    background: #faf8f5;
-    color: #514a43;
-    box-shadow: none;
-}
-
-.fashion-storefront .bank-cyber-chip:hover {
-    border-color: #d0b9a6;
-    background: #fff;
-    box-shadow: none;
-}
-
-.fashion-storefront .cyber-footer > div:last-child {
-    border-color: #e8e1d8 !important;
-    color: #81766d !important;
-}
-
-.fashion-storefront .buy-checkout-modal {
-    background: rgba(43, 36, 30, 0.66);
-}
-
-.fashion-storefront .buy-checkout-modal .checkout-cyber-card {
-    border: 1px solid #e8e1d8;
-    border-radius: 4px;
-    background: #fff;
-    color: #302923;
-    box-shadow: 0 24px 80px rgba(30, 25, 21, 0.22);
-}
-
-.fashion-storefront .buy-checkout-modal .checkout-cyber-card h2,
-.fashion-storefront .checkout-order-form label,
-.fashion-storefront .checkout-receipt-field-label {
-    color: #302923;
-}
-
-.fashion-storefront .checkout-modal-close {
-    border-color: #e8e1d8;
-    background: #f7f4ef;
-    color: #514a43;
-}
-
-.fashion-storefront .checkout-product-image {
-    width: 90px;
-    height: 90px;
-    margin: 0 auto 14px;
-    padding: 8px;
-}
-
-.fashion-storefront .checkout-product-price {
-    align-self: center;
-    margin: 14px auto 0;
-}
-
-.fashion-storefront .checkout-product-price span {
-    color: #756d64;
-}
-
-.fashion-storefront .checkout-coupon-panel {
-    display: grid;
-    gap: 7px;
-    margin: 16px 0;
-    padding: 14px;
-    border: 1px solid #e8e1d8;
-    border-radius: 3px;
-    background: #faf8f5;
-    color: #514a43;
-}
-
-.fashion-storefront .checkout-coupon-panel label {
-    color: #514a43;
-    font-size: 12px;
-    font-weight: 700;
-}
-
-.fashion-storefront .checkout-coupon-row {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    gap: 8px;
-}
-
-.fashion-storefront .checkout-coupon-row .cyber-buy-action {
-    min-width: 90px;
-    margin: 0;
-    padding: 8px 12px;
-}
-
-.fashion-storefront .checkout-coupon-status,
-.fashion-storefront .checkout-coupon-panel > p {
-    margin: 0;
-    font-size: 12px;
-}
-
-.fashion-storefront .checkout-coupon-status[data-state="error"] {
-    color: #995d48;
-}
-
-.fashion-storefront .checkout-coupon-status[data-state="success"] {
-    color: #526047;
-}
-
-.fashion-storefront .bank-sel-btn {
-    border-color: #ded5cb;
-    border-radius: 3px;
-    background: #f8f5f0;
-    color: #514a43;
-}
-
-.fashion-storefront .bank-sel-btn.active {
-    border-color: #98664f;
-    background: #f1e7dd;
-    color: #805f4b;
-    box-shadow: none;
-}
-
-.fashion-storefront .qr-cyber-frame {
-    border: 1px solid #e2d8ce;
-    border-radius: 3px;
-    box-shadow: none;
-}
-
-.fashion-storefront .checkout-order-form input {
-    border-color: #ded5cb;
-    border-radius: 3px;
-    background: #fff;
-    color: #302923;
-}
-
-.fashion-storefront .checkout-order-form input:focus {
-    border-color: #98664f;
-    box-shadow: 0 0 0 3px rgba(152, 102, 79, 0.12);
-}
-
-.fashion-storefront .checkout-receipt-upload,
-.fashion-storefront .checkout-payment-instructions {
-    border-color: #e2d8ce;
-    border-radius: 3px;
-    background: #f8f5f0;
-    color: #514a43;
-}
-
-.fashion-storefront .checkout-receipt-upload i,
-.fashion-storefront .checkout-payment-instructions i {
-    color: #98664f;
-}
-
-.fashion-storefront .checkout-delivery-note,
-.fashion-storefront .checkout-email-privacy,
-.fashion-storefront .checkout-product-description,
-.fashion-storefront .checkout-order-status,
-.fashion-storefront .checkout-receipt-upload small,
-.fashion-storefront .checkout-receipt-filename {
-    color: #756d64;
-}
-
-.fashion-storefront .checkout-telegram-action,
-.fashion-storefront .cyber-notify-card .cyber-glow-btn {
-    border: 1px solid #332d28;
-    border-radius: 3px;
-    background: #332d28;
-    color: #fff;
-    box-shadow: none;
-}
-
-.fashion-storefront .cyber-notify-card {
-    border-color: #e8e1d8;
-    border-radius: 4px;
-    background: #fff;
-    color: #302923;
-    box-shadow: 0 24px 80px rgba(30, 25, 21, 0.22);
-}
-
-.fashion-storefront .cyber-notify-card h3 {
-    color: #302923;
-}
-
-.fashion-storefront .cyber-notify-card p {
-    color: #756d64;
-}
-
-.fashion-storefront .about-cyber-layer {
-    width: min(1320px, 100%);
-    margin: 38px auto 64px;
-    padding: 0 clamp(16px, 4vw, 48px);
-}
-
-.fashion-storefront .about-section,
-.fashion-storefront .about-contact {
-    border: 1px solid #e8e1d8;
-    border-radius: 3px;
-    background: #fff;
-    box-shadow: 0 8px 30px rgba(48, 41, 35, 0.045);
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
-}
-
-.fashion-storefront .about-section {
-    margin-top: 20px;
-    padding: clamp(24px, 4vw, 42px);
-}
-
-.fashion-storefront .about-section-heading span {
-    color: #98664f;
-}
-
-.fashion-storefront .about-section-heading h3,
-.fashion-storefront .about-contact h3 {
-    color: #302923;
-    font-family: Georgia, 'Kantumruy Pro', serif;
-    font-weight: 500;
-}
-
-.fashion-storefront .about-section-heading p,
-.fashion-storefront .about-contact p {
-    color: #756d64;
-}
-
-.fashion-storefront .about-info-card,
-.fashion-storefront .about-value-card,
-.fashion-storefront .about-service-card,
-.fashion-storefront .about-step-card {
-    border: 1px solid #e8e1d8;
-    border-radius: 3px;
-    background: #faf8f5;
-}
-
-.fashion-storefront .about-info-card h4,
-.fashion-storefront .about-value-card h4,
-.fashion-storefront .about-service-card h4,
-.fashion-storefront .about-step-card h4 {
-    color: #302923;
-    font-weight: 600;
-}
-
-.fashion-storefront .about-info-card p,
-.fashion-storefront .about-value-card p,
-.fashion-storefront .about-service-card p,
-.fashion-storefront .about-step-card p {
-    color: #756d64;
-}
-
-.fashion-storefront .about-icon {
-    border: 1px solid #e8ddd2;
-    border-radius: 50%;
-    background: #f7f1eb;
-    color: #98664f;
-}
-
-.fashion-storefront .about-step-card::before {
-    color: #98664f;
-}
-
-.fashion-storefront .about-contact {
-    border-color: #e8e1d8;
-    background: #efe5d9;
-}
-
-.fashion-storefront .about-contact .cyber-glow-btn {
-    border: 1px solid #332d28;
-    border-radius: 2px;
-    background: #332d28;
-    color: #fff;
-    box-shadow: none;
-}
-
-.fashion-storefront .about-contact .cyber-glow-btn:hover {
-    border-color: #805f4b;
-    background: #805f4b;
-    box-shadow: none;
-}
-
-.fashion-storefront .about-page-footer {
-    color: #81766d;
-}
-
-.fashion-storefront .support-cyber-layer {
-    width: min(1320px, 100%);
-    min-height: calc(100vh - 64px);
-    margin: 0 auto;
-    padding: clamp(28px, 5vw, 64px) clamp(16px, 4vw, 48px);
-}
-
-.fashion-storefront .support-cyber-card {
-    min-height: 0;
-    border: 1px solid #e8e1d8;
-    border-radius: 3px;
-    background:
-        radial-gradient(ellipse at 12% 92%, rgba(193, 156, 126, 0.12), transparent 35%),
-        #fff;
-    box-shadow: 0 8px 30px rgba(48, 41, 35, 0.045);
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
-}
-
-.fashion-storefront .support-intro h2 {
-    color: #302923;
-    font-family: Georgia, 'Kantumruy Pro', serif;
-    font-size: clamp(28px, 3vw, 40px);
-    font-weight: 500;
-}
-
-.fashion-storefront .support-intro p {
-    color: #756d64;
-}
-
-.fashion-storefront .support-intro .dna-badge {
-    border-color: #ded2c5;
-    border-radius: 2px;
-    background: #f5f0e9;
-    color: #805f4b;
-    box-shadow: none;
-}
-
-.fashion-storefront .support-form .form-group label {
-    color: #514a43;
-}
-
-.fashion-storefront .support-form .form-control-cyber {
-    border: 1px solid #ded5cb;
-    border-radius: 3px;
-    background: #faf8f5;
-    color: #302923;
-    box-shadow: none;
-}
-
-.fashion-storefront .support-form .form-control-cyber::placeholder {
-    color: #a0968a;
-}
-
-.fashion-storefront .support-form .form-control-cyber:focus {
-    border-color: #98664f;
-    background: #fff;
-    box-shadow: 0 0 0 3px rgba(152, 102, 79, 0.12);
-}
-
-.fashion-storefront .support-form .cyber-buy-action {
-    border: 1px solid #332d28;
-    border-radius: 2px;
-    background: #332d28;
-    color: #fff;
-    box-shadow: none;
-}
-
-.fashion-storefront .support-form .cyber-buy-action:hover {
-    transform: translateY(-1px);
-    background: #805f4b;
-    box-shadow: none;
-}
-
-.fashion-storefront .support-after-form .alert-cyber {
-    border-radius: 3px;
-}
-
-.fashion-storefront .support-after-form .alert-success {
-    border-color: #68765e;
-    background: #eff2eb;
-    color: #526047;
-}
-
-.fashion-storefront .support-after-form .alert-error {
-    border-color: #b87470;
-    background: #fbefed;
-    color: #995d48;
-}
-
-@media (max-width: 860px) {
-    .fashion-storefront .hero-centerpiece {
-        min-height: 0;
-    }
-
-    .fashion-storefront .hero-visual-side {
-        width: min(78vw, 330px);
-    }
-
-    .fashion-storefront .nav-hologram-links {
-        display: none;
-    }
-
-    .fashion-storefront .mobile-nav-toggle {
-        display: flex;
-    }
-}
-
-@media (max-width: 600px) {
-    .fashion-storefront .cyber-nav-container {
-        padding: 0 12px;
-    }
-
-    .fashion-storefront .cyber-island-nav {
-        padding: 10px 0;
-    }
-
-    .fashion-storefront .hero-deck {
-        margin-top: 22px;
-        padding: 0 14px;
-    }
-
-    .fashion-storefront .hero-centerpiece {
-        padding: 34px 22px;
-    }
-
-    .fashion-storefront .hero-centerpiece h2 {
-        font-size: clamp(31px, 9vw, 42px);
-    }
-
-    .fashion-storefront .hero-centerpiece p {
-        font-size: 14px;
-    }
-
-    .fashion-storefront .hero-visual-side {
-        height: 220px;
-    }
-
-    .fashion-storefront .catalog-header {
-        margin: 58px auto 22px;
-        padding: 0 16px;
-    }
-
-    .fashion-storefront .cyber-cards-matrix {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 10px;
-        padding: 0 12px 48px;
-    }
-
-    .fashion-storefront .cyber-card {
-        padding: 8px 8px 12px;
-    }
-
-    .fashion-storefront .card-top-tag {
-        top: 14px;
-        right: 14px;
-        padding: 4px 6px;
-        font-size: 8px;
-    }
-
-    .fashion-storefront .card-hologram-frame {
-        height: clamp(125px, 38vw, 190px);
-        margin-bottom: 12px;
-        padding: 12px;
-    }
-
-    .fashion-storefront .card-app-title {
-        font-size: 14px;
-    }
-
-    .fashion-storefront .card-feature-specs {
-        font-size: 9px;
-    }
-
-    .fashion-storefront .cyber-card .cyber-buy-action {
-        min-height: 38px;
-        padding: 8px 5px;
-        font-size: 10px;
-    }
-
-    .fashion-storefront .cyber-trust-grid {
-        margin-bottom: 48px;
-        padding: 0 12px;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 9px;
-    }
-
-    .fashion-storefront .cyber-trust-card {
-        padding: 12px 10px;
-        gap: 9px;
-    }
-
-    .fashion-storefront .trust-glow-icon {
-        width: 36px;
-        height: 36px;
-        font-size: 15px;
-    }
-
-    .fashion-storefront .trust-texts h4 {
-        font-size: 12px;
-    }
-
-    .fashion-storefront .trust-texts p {
-        font-size: 10px;
-    }
-
-    .fashion-storefront .cyber-footer {
-        margin: 0 12px 18px;
-        padding: 26px 18px;
-    }
-
-    .fashion-storefront .about-cyber-layer {
-        margin: 22px auto 44px;
-        padding: 0 12px;
-    }
-
-    .fashion-storefront .support-cyber-layer {
-        min-height: calc(100vh - 64px);
-        padding: 24px 12px;
-    }
-
-    .fashion-storefront .support-cyber-card {
-        gap: 20px;
-        padding: 24px 18px;
-    }
-}
-
-@media (max-width: 380px) {
-    .fashion-storefront .cyber-cards-matrix {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-
-    .fashion-storefront .hero-centerpiece {
-        padding: 28px 16px;
-    }
-
-    .fashion-storefront .hero-stats-row {
-        gap: 14px;
-    }
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .fashion-storefront .fashion-shop-cta,
-    .fashion-storefront .cyber-card,
-    .fashion-storefront .cyber-buy-action,
-    .fashion-storefront .nav-actions > .cyber-glow-btn {
-        transition: none;
-    }
-}
+.fashion-storefront {
+    --bg-dark: #f7f4ef;
+    --bg-gradient: #f7f4ef;
+    --cyber-cyan: #98664f;
+    --cyber-blue: #b17b60;
+    --cyber-purple: #765c4b;
+    --cyber-pink: #b87470;
+    --cyber-emerald: #68765e;
+    --cyber-amber: #9a7950;
+    --card-bg: #fff;
+    --card-border: #e7dfd6;
+    --text-white: #2e2924;
+    --text-muted: #756d64;
+    --text-dim: #958b80;
+    --radius-card: 4px;
+    color-scheme: light;
+    min-height: 100vh;
+    background: #f7f4ef;
+    color: #2e2924;
+}
+
+.fashion-storefront .cyber-grid-lines {
+    display: none;
+}
+
+.fashion-storefront .cyber-nav-container {
+    top: 0;
+    padding: 0 clamp(12px, 4vw, 48px);
+    background: rgba(255, 255, 255, 0.96);
+    border-bottom: 1px solid #e8e1d8;
+    transition: background-color 180ms ease, border-color 180ms ease;
+}
+
+.fashion-storefront .cyber-island-nav {
+    max-width: 1320px;
+    padding: 12px 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+
+.fashion-storefront .brand-hologram-cube {
+    border: 1px solid #e7ddd2;
+    border-radius: 50%;
+    background: #f5f0e9;
+    box-shadow: none;
+}
+
+.fashion-storefront .brand-hologram-cube img {
+    filter: none;
+}
+
+.fashion-storefront .brand-titles h1 {
+    background: none;
+    color: #302923;
+    -webkit-text-fill-color: #302923;
+    font-family: 'Outfit', 'Kantumruy Pro', sans-serif;
+    letter-spacing: 0.08em;
+}
+
+.fashion-storefront .dna-badge {
+    border-color: #ded2c5;
+    background: #f5f0e9;
+    color: #805f4b;
+    box-shadow: none;
+}
+
+.fashion-storefront .brand-titles > span {
+    color: #81766d;
+}
+
+.fashion-storefront .nav-hologram-links {
+    gap: 3px;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+}
+
+.fashion-storefront .nav-tab-btn {
+    color: #625b54;
+    border: 1px solid transparent;
+    border-radius: 2px;
+    font-size: 13px;
+    letter-spacing: 0.01em;
+}
+
+.fashion-storefront .nav-tab-btn:hover,
+.fashion-storefront .nav-tab-btn.active {
+    border-color: transparent;
+    background: transparent;
+    color: #9a6048;
+    box-shadow: inset 0 -2px #9a6048;
+}
+
+/* Fashion Storefront Nav Actions Buttons & User Profile Capsule */
+.fashion-storefront .nav-actions .cyber-glow-btn,
+.fashion-storefront .nav-actions .fashion-nav-btn,
+.fashion-storefront .nav-actions .user-nav-btn,
+.fashion-storefront .nav-actions .nav-cart-trigger,
+.fashion-storefront .nav-actions .nav-signin-btn,
+.fashion-storefront .nav-actions .nav-telegram-btn {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 7px !important;
+    padding: 7px 14px !important;
+    border: 1px solid #332d28 !important;
+    border-radius: 4px !important;
+    background: #332d28 !important;
+    color: #ffffff !important;
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    text-decoration: none !important;
+    box-shadow: none !important;
+    cursor: pointer !important;
+    outline: none !important;
+    transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease !important;
+}
+
+.fashion-storefront .nav-actions .cyber-glow-btn:hover,
+.fashion-storefront .nav-actions .fashion-nav-btn:hover,
+.fashion-storefront .nav-actions .user-nav-btn:hover,
+.fashion-storefront .nav-actions .user-nav-btn.is-active,
+.fashion-storefront .nav-actions .nav-cart-trigger:hover,
+.fashion-storefront .nav-actions .nav-signin-btn:hover,
+.fashion-storefront .nav-actions .nav-telegram-btn:hover {
+    border-color: #805f4b !important;
+    background: #805f4b !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 12px rgba(128, 95, 75, 0.25) !important;
+    transform: translateY(-1px);
+}
+
+.fashion-storefront .nav-actions .nav-cart-trigger i,
+.fashion-storefront .nav-actions .nav-telegram-btn i,
+.fashion-storefront .nav-actions .fa-telegram-plane {
+    color: #ffffff !important;
+    font-size: 14px;
+}
+
+.fashion-storefront .nav-actions .nav-cart-badge {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 4px;
+    border-radius: 9999px;
+    background: #805f4b;
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 800;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+    border: 1.5px solid #ffffff;
+}
+
+/* User Profile Navbar Capsule */
+.fashion-storefront .user-menu-dropdown-wrap {
+    position: relative;
+    display: inline-block;
+}
+
+.fashion-storefront .user-nav-btn {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 7px !important;
+    padding: 7px 14px !important;
+    border: 1px solid #332d28 !important;
+    border-radius: 4px !important;
+    background: #332d28 !important;
+    color: #ffffff !important;
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    text-decoration: none !important;
+    box-shadow: none !important;
+    cursor: pointer !important;
+    outline: none !important;
+    transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease !important;
+}
+
+.fashion-storefront .user-nav-btn:hover,
+.fashion-storefront .user-nav-btn:focus,
+.fashion-storefront .user-nav-btn:focus-visible,
+.fashion-storefront .user-nav-btn.is-active {
+    border-color: #805f4b !important;
+    background: #805f4b !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 12px rgba(128, 95, 75, 0.25) !important;
+    transform: translateY(-1px);
+    outline: none !important;
+}
+
+[data-theme="dark"] .fashion-storefront .user-nav-btn {
+    background: #1f2937 !important;
+    border-color: #374151 !important;
+    color: #f3f4f6 !important;
+}
+
+[data-theme="dark"] .fashion-storefront .user-nav-btn:hover,
+[data-theme="dark"] .fashion-storefront .user-nav-btn:focus,
+[data-theme="dark"] .fashion-storefront .user-nav-btn:focus-visible,
+[data-theme="dark"] .fashion-storefront .user-nav-btn.is-active {
+    background: #374151 !important;
+    border-color: #4b5563 !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4) !important;
+}
+
+.fashion-storefront .nav-user-avatar-img {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1.5px solid #d8c3b4;
+}
+
+.fashion-storefront .nav-user-avatar-icon {
+    font-size: 16px !important;
+    color: #d8c3b4 !important;
+}
+
+.fashion-storefront .nav-user-name {
+    max-width: 105px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: #ffffff;
+    font-weight: 600;
+}
+
+.fashion-storefront .nav-user-caret {
+    font-size: 9px !important;
+    color: #d8c3b4 !important;
+    opacity: 0.85;
+    transition: transform 0.2s ease;
+}
+
+.fashion-storefront .user-nav-btn.is-active .nav-user-caret {
+    transform: rotate(180deg);
+}
+
+.fashion-storefront .nav-signin-icon {
+    font-size: 15px !important;
+    color: #d8c3b4 !important;
+}
+
+/* User Account Dropdown Menu */
+.fashion-storefront .user-dropdown-menu {
+    display: none;
+    position: absolute;
+    right: 0;
+    top: calc(100% + 8px);
+    width: 220px;
+    background: #ffffff;
+    border: 1px solid #ded5cb;
+    border-radius: 8px;
+    box-shadow: 0 12px 30px rgba(48, 41, 35, 0.14);
+    z-index: 1050;
+    overflow: hidden;
+    animation: userDropdownFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.fashion-storefront .user-dropdown-menu.is-open {
+    display: block;
+}
+
+@keyframes userDropdownFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-6px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.fashion-storefront .user-dropdown-header {
+    padding: 12px 14px;
+    border-bottom: 1px solid #ede7df;
+    background: #faf8f5;
+}
+
+.fashion-storefront .user-dropdown-name {
+    font-size: 13.5px;
+    font-weight: 700;
+    color: #203f3a;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.fashion-storefront .user-dropdown-email {
+    font-size: 11.5px;
+    color: #7d756d;
+    margin-top: 2px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.fashion-storefront .user-dropdown-body {
+    padding: 6px 0;
+}
+
+.fashion-storefront .user-dropdown-link {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 14px;
+    color: #4a443e;
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.fashion-storefront .user-dropdown-link i {
+    width: 16px;
+    color: #805f4b;
+    font-size: 14px;
+    text-align: center;
+}
+
+.fashion-storefront .user-dropdown-link:hover {
+    background: #f4efe9;
+    color: #203f3a;
+}
+
+.fashion-storefront .user-dropdown-divider {
+    height: 1px;
+    background: #ede7df;
+    margin: 5px 0;
+}
+
+.fashion-storefront .user-dropdown-logout {
+    color: #b91c1c;
+}
+
+.fashion-storefront .user-dropdown-logout i {
+    color: #b91c1c;
+}
+
+.fashion-storefront .user-dropdown-logout:hover {
+    background: #fef2f2;
+    color: #991b1b;
+}
+
+/* Dark Mode Nav Actions & User Dropdown */
+[data-theme="dark"] .fashion-storefront .nav-actions .cyber-glow-btn,
+[data-theme="dark"] .fashion-storefront .nav-actions .fashion-nav-btn,
+[data-theme="dark"] .fashion-storefront .nav-actions .user-nav-btn,
+[data-theme="dark"] .fashion-storefront .nav-actions .nav-cart-trigger,
+[data-theme="dark"] .fashion-storefront .nav-actions .nav-signin-btn,
+[data-theme="dark"] .fashion-storefront .nav-actions .nav-telegram-btn {
+    background: #1e1b18 !important;
+    border-color: #3d3730 !important;
+    color: #f2eee9 !important;
+}
+
+[data-theme="dark"] .fashion-storefront .nav-actions .cyber-glow-btn:hover,
+[data-theme="dark"] .fashion-storefront .nav-actions .fashion-nav-btn:hover,
+[data-theme="dark"] .fashion-storefront .nav-actions .user-nav-btn:hover,
+[data-theme="dark"] .fashion-storefront .nav-actions .user-nav-btn.is-active,
+[data-theme="dark"] .fashion-storefront .nav-actions .nav-cart-trigger:hover,
+[data-theme="dark"] .fashion-storefront .nav-actions .nav-signin-btn:hover,
+[data-theme="dark"] .fashion-storefront .nav-actions .nav-telegram-btn:hover {
+    background: #805f4b !important;
+    border-color: #805f4b !important;
+    color: #ffffff !important;
+}
+
+[data-theme="dark"] .fashion-storefront .user-dropdown-menu {
+    background: #181512;
+    border-color: #38322b;
+    box-shadow: 0 14px 35px rgba(0, 0, 0, 0.55);
+}
+
+[data-theme="dark"] .fashion-storefront .user-dropdown-header {
+    background: #201c18;
+    border-bottom-color: #38322b;
+}
+
+[data-theme="dark"] .fashion-storefront .user-dropdown-name {
+    color: #f2eee9;
+}
+
+[data-theme="dark"] .fashion-storefront .user-dropdown-email {
+    color: #a89e93;
+}
+
+[data-theme="dark"] .fashion-storefront .user-dropdown-link {
+    color: #d8cfc4;
+}
+
+[data-theme="dark"] .fashion-storefront .user-dropdown-link i {
+    color: #c49980;
+}
+
+[data-theme="dark"] .fashion-storefront .user-dropdown-link:hover {
+    background: #2a241e;
+    color: #ffffff;
+}
+
+[data-theme="dark"] .fashion-storefront .user-dropdown-divider {
+    background: #38322b;
+}
+
+[data-theme="dark"] .fashion-storefront .user-dropdown-logout {
+    color: #f87171;
+}
+
+[data-theme="dark"] .fashion-storefront .user-dropdown-logout i {
+    color: #f87171;
+}
+
+[data-theme="dark"] .fashion-storefront .user-dropdown-logout:hover {
+    background: rgba(220, 38, 38, 0.16);
+    color: #fca5a5;
+}
+
+.fashion-storefront .mobile-nav-toggle {
+    border-color: #ded2c5;
+    background: #f5f0e9;
+    color: #332d28;
+}
+
+.fashion-storefront .mobile-menu-drawer {
+    border: 1px solid #e7dfd6;
+    border-radius: 4px;
+    background: #fff;
+    box-shadow: 0 18px 45px rgba(48, 41, 35, 0.12);
+}
+
+.fashion-storefront .mobile-menu-drawer .nav-tab-btn {
+    color: #514a43;
+}
+
+.fashion-storefront .hero-deck {
+    max-width: 1320px;
+    margin: 38px auto 0;
+    padding: 0 clamp(16px, 4vw, 48px);
+}
+
+.fashion-storefront .cyber-hud-bar {
+    display: none;
+}
+
+.fashion-storefront .hero-centerpiece {
+    min-height: 400px;
+    padding: clamp(34px, 7vw, 84px);
+    border: 0;
+    border-radius: 4px;
+    background:
+        radial-gradient(ellipse at 82% 34%, rgba(193, 156, 126, 0.2), transparent 34%),
+        linear-gradient(112deg, #efe5d9 0%, #f5eee6 55%, #eee3d7 100%);
+    box-shadow: none;
+    backdrop-filter: none;
+}
+
+.fashion-storefront .hero-text-side {
+    max-width: 660px;
+}
+
+.fashion-storefront .hero-tag-pill {
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    color: #916348;
+    font-size: 11px;
+    letter-spacing: 0.14em;
+}
+
+.fashion-storefront .hero-centerpiece h2 {
+    max-width: 660px;
+    color: #302923;
+    background: none;
+    -webkit-text-fill-color: #302923;
+    font-family: Georgia, 'Kantumruy Pro', serif;
+    font-size: clamp(34px, 5.2vw, 60px);
+    font-weight: 500;
+    letter-spacing: -0.035em;
+    line-height: 1.18;
+}
+
+.fashion-storefront .hero-centerpiece p {
+    max-width: 580px;
+    color: #6f665e;
+    font-size: 15px;
+    line-height: 1.85;
+}
+
+.fashion-storefront .fashion-shop-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 28px;
+    min-height: 48px;
+    margin-top: 24px;
+    padding: 0 20px;
+    border: 1px solid #332d28;
+    border-radius: 2px;
+    background: #332d28;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: background-color 180ms ease, border-color 180ms ease, transform 180ms ease;
+}
+
+.fashion-storefront .fashion-shop-cta:hover {
+    transform: translateY(-2px);
+    border-color: #805f4b;
+    background: #805f4b;
+}
+
+.fashion-storefront .hero-stats-row {
+    gap: clamp(18px, 3vw, 34px);
+    margin-top: 30px;
+}
+
+.fashion-storefront .stat-num {
+    color: #302923;
+    font-family: 'Outfit', 'Kantumruy Pro', sans-serif;
+    font-size: 20px;
+    font-weight: 600;
+}
+
+.fashion-storefront .stat-num span {
+    color: #9a6048;
+}
+
+.fashion-storefront .stat-label {
+    color: #81766d;
+    letter-spacing: 0.08em;
+}
+
+.fashion-storefront .hero-visual-side {
+    position: relative;
+    width: min(34vw, 330px);
+    height: 300px;
+    border-radius: 48% 48% 4px 4px;
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.42), rgba(211, 188, 166, 0.48));
+    flex-direction: column;
+    gap: 8px;
+}
+
+.fashion-storefront .hero-managed-banner {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: inherit;
+    object-fit: cover;
+    opacity: 0.72;
+}
+
+.fashion-storefront .hero-brand-caption {
+    position: relative;
+    z-index: 1;
+    color: #805f4b;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+}
+
+.fashion-storefront .hero-brand-mark {
+    position: relative;
+    z-index: 1;
+    color: #805f4b;
+    font-family: Georgia, 'Kantumruy Pro', serif;
+    font-size: clamp(84px, 11vw, 132px);
+    font-weight: 500;
+    letter-spacing: -0.1em;
+    line-height: 1;
+    padding-right: 0.1em;
+}
+
+.fashion-storefront .catalog-header {
+    max-width: 1320px;
+    margin: 82px auto 28px;
+    padding: 0 clamp(16px, 4vw, 48px);
+    text-align: left;
+}
+
+.fashion-storefront .catalog-kicker {
+    color: #98664f;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+}
+
+.fashion-storefront .catalog-header h2 {
+    margin-top: 10px;
+    color: #302923;
+    background: none;
+    -webkit-text-fill-color: #302923;
+    font-family: Georgia, 'Kantumruy Pro', serif;
+    font-size: clamp(27px, 3vw, 38px);
+    font-weight: 500;
+    letter-spacing: -0.025em;
+}
+
+.fashion-storefront .catalog-header p {
+    margin-top: 7px;
+    color: #756d64;
+    font-size: 14px;
+}
+
+.fashion-storefront .cyber-cards-matrix {
+    max-width: 1320px;
+    padding: 0 clamp(16px, 4vw, 48px) 64px;
+    grid-template-columns: repeat(auto-fill, minmax(235px, 1fr));
+    gap: 20px;
+}
+
+.fashion-storefront .cyber-card {
+    align-items: stretch;
+    padding: 12px 12px 16px;
+    border: 1px solid #e8e1d8;
+    border-radius: 3px;
+    background: #fff;
+    text-align: left;
+    box-shadow: 0 4px 18px rgba(48, 41, 35, 0.035);
+    transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+}
+
+.fashion-storefront .cyber-card::after {
+    display: none;
+}
+
+.fashion-storefront .cyber-card:hover {
+    transform: translateY(-3px);
+    border-color: #d0b9a6;
+    box-shadow: 0 14px 30px rgba(48, 41, 35, 0.1);
+}
+
+.fashion-storefront .card-top-tag {
+    z-index: 1;
+    top: 22px;
+    right: 22px;
+    padding: 5px 9px;
+    border: 0;
+    border-radius: 2px;
+    background: rgba(255, 255, 255, 0.94);
+    color: #526047;
+    font-size: 9px;
+    letter-spacing: 0.1em;
+}
+
+.fashion-storefront .card-top-tag.hot {
+    background: #f7ebe5;
+    color: #995d48;
+}
+
+.fashion-storefront .card-hologram-frame {
+    width: 100%;
+    height: 206px;
+    margin: 0 0 16px;
+    padding: 22px;
+    border: 0;
+    border-radius: 2px;
+    background: #f4f0ea;
+    box-shadow: none;
+}
+
+.fashion-storefront .cyber-card:hover .card-hologram-frame {
+    transform: none;
+    border-color: transparent;
+    box-shadow: none;
+}
+
+.fashion-storefront .card-hologram-frame img {
+    filter: none;
+}
+
+.fashion-storefront .card-app-title {
+    margin: 0 0 5px;
+    color: #302923;
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: 0;
+}
+
+.fashion-storefront .card-feature-specs {
+    justify-content: flex-start;
+    margin-bottom: 12px;
+    color: #81766d;
+    font-size: 11px;
+}
+
+.fashion-storefront .cyber-price-pill {
+    align-self: flex-start;
+    margin: auto 0 14px;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    color: #302923;
+    font-family: 'Outfit', 'Kantumruy Pro', sans-serif;
+    font-size: 17px;
+    box-shadow: none;
+}
+
+.fashion-storefront .cyber-price-pill span {
+    color: #81766d;
+}
+
+.fashion-storefront .cyber-card .cyber-buy-action {
+    min-height: 42px;
+    padding: 10px 12px;
+    border: 1px solid #332d28;
+    border-radius: 2px;
+    background: #332d28;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 600;
+    box-shadow: none;
+}
+
+.fashion-storefront .cyber-card .cyber-buy-action:hover {
+    transform: translateY(-1px);
+    background: #805f4b;
+    box-shadow: none;
+}
+
+.fashion-storefront .cyber-trust-grid {
+    max-width: 1224px;
+    margin: 0 auto 70px;
+    padding: 0 24px;
+    gap: 12px;
+}
+
+.fashion-storefront .cyber-trust-card {
+    border: 1px solid #e8e1d8;
+    border-radius: 3px;
+    background: #fff;
+    box-shadow: none;
+}
+
+.fashion-storefront .cyber-trust-card:hover {
+    border-color: #d0b9a6;
+    background: #fff;
+    box-shadow: 0 8px 22px rgba(48, 41, 35, 0.07);
+}
+
+.fashion-storefront .trust-glow-icon {
+    border: 1px solid #e8ddd2;
+    border-radius: 50%;
+    background: #f7f1eb;
+    color: #98664f !important;
+    box-shadow: none;
+}
+
+.fashion-storefront .trust-texts h4 {
+    color: #302923;
+}
+
+.fashion-storefront .trust-texts p {
+    color: #81766d;
+}
+
+.fashion-storefront .cyber-footer {
+    max-width: 1320px;
+    margin: 0 auto 30px;
+    padding: 36px clamp(20px, 5vw, 54px);
+    border: 1px solid #e8e1d8;
+    border-radius: 3px;
+    background: #fff;
+    box-shadow: 0 8px 30px rgba(48, 41, 35, 0.045);
+    text-align: left;
+}
+
+.fashion-storefront .cyber-footer h3 {
+    color: #302923;
+}
+
+.fashion-storefront .bank-cyber-chip {
+    border-color: #e8e1d8;
+    border-radius: 3px;
+    background: #faf8f5;
+    color: #514a43;
+    box-shadow: none;
+}
+
+.fashion-storefront .bank-cyber-chip:hover {
+    border-color: #d0b9a6;
+    background: #fff;
+    box-shadow: none;
+}
+
+.fashion-storefront .cyber-footer > div:last-child {
+    border-color: #e8e1d8 !important;
+    color: #81766d !important;
+}
+
+.fashion-storefront .buy-checkout-modal {
+    background: rgba(43, 36, 30, 0.66);
+}
+
+.fashion-storefront .buy-checkout-modal .checkout-cyber-card {
+    border: 1px solid #e8e1d8;
+    border-radius: 4px;
+    background: #fff;
+    color: #302923;
+    box-shadow: 0 24px 80px rgba(30, 25, 21, 0.22);
+}
+
+.fashion-storefront .buy-checkout-modal .checkout-cyber-card h2,
+.fashion-storefront .checkout-order-form label,
+.fashion-storefront .checkout-receipt-field-label {
+    color: #302923;
+}
+
+.fashion-storefront .checkout-modal-close {
+    border-color: #e8e1d8;
+    background: #f7f4ef;
+    color: #514a43;
+}
+
+.fashion-storefront .checkout-product-image {
+    width: 90px;
+    height: 90px;
+    margin: 0 auto 14px;
+    padding: 8px;
+}
+
+.fashion-storefront .checkout-product-price {
+    align-self: center;
+    margin: 14px auto 0;
+}
+
+.fashion-storefront .checkout-product-price span {
+    color: #756d64;
+}
+
+.fashion-storefront .checkout-coupon-panel {
+    display: grid;
+    gap: 7px;
+    margin: 16px 0;
+    padding: 14px;
+    border: 1px solid #e8e1d8;
+    border-radius: 3px;
+    background: #faf8f5;
+    color: #514a43;
+}
+
+.fashion-storefront .checkout-coupon-panel label {
+    color: #514a43;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.fashion-storefront .checkout-coupon-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px;
+}
+
+.fashion-storefront .checkout-coupon-row .cyber-buy-action {
+    min-width: 90px;
+    margin: 0;
+    padding: 8px 12px;
+}
+
+.fashion-storefront .checkout-coupon-status,
+.fashion-storefront .checkout-coupon-panel > p {
+    margin: 0;
+    font-size: 12px;
+}
+
+.fashion-storefront .checkout-coupon-status[data-state="error"] {
+    color: #995d48;
+}
+
+.fashion-storefront .checkout-coupon-status[data-state="success"] {
+    color: #526047;
+}
+
+.fashion-storefront .bank-sel-btn {
+    border-color: #ded5cb;
+    border-radius: 3px;
+    background: #f8f5f0;
+    color: #514a43;
+}
+
+.fashion-storefront .bank-sel-btn.active {
+    border-color: #98664f;
+    background: #f1e7dd;
+    color: #805f4b;
+    box-shadow: none;
+}
+
+.fashion-storefront .qr-cyber-frame {
+    border: 1px solid #e2d8ce;
+    border-radius: 3px;
+    box-shadow: none;
+}
+
+.fashion-storefront .checkout-order-form input {
+    border-color: #ded5cb;
+    border-radius: 3px;
+    background: #fff;
+    color: #302923;
+}
+
+.fashion-storefront .checkout-order-form input:focus {
+    border-color: #98664f;
+    box-shadow: 0 0 0 3px rgba(152, 102, 79, 0.12);
+}
+
+.fashion-storefront .checkout-receipt-upload,
+.fashion-storefront .checkout-payment-instructions {
+    border-color: #e2d8ce;
+    border-radius: 3px;
+    background: #f8f5f0;
+    color: #514a43;
+}
+
+.fashion-storefront .checkout-receipt-upload i,
+.fashion-storefront .checkout-payment-instructions i {
+    color: #98664f;
+}
+
+.fashion-storefront .checkout-delivery-note,
+.fashion-storefront .checkout-email-privacy,
+.fashion-storefront .checkout-product-description,
+.fashion-storefront .checkout-order-status,
+.fashion-storefront .checkout-receipt-upload small,
+.fashion-storefront .checkout-receipt-filename {
+    color: #756d64;
+}
+
+.fashion-storefront .checkout-telegram-action,
+.fashion-storefront .cyber-notify-card .cyber-glow-btn {
+    border: 1px solid #332d28;
+    border-radius: 3px;
+    background: #332d28;
+    color: #fff;
+    box-shadow: none;
+}
+
+.fashion-storefront .cyber-notify-card {
+    border-color: #e8e1d8;
+    border-radius: 4px;
+    background: #fff;
+    color: #302923;
+    box-shadow: 0 24px 80px rgba(30, 25, 21, 0.22);
+}
+
+.fashion-storefront .cyber-notify-card h3 {
+    color: #302923;
+}
+
+.fashion-storefront .cyber-notify-card p {
+    color: #756d64;
+}
+
+/* ==========================================================================
+   ABOUT US PAGE • LUXURY FASHION EDITORIAL STYLING
+   ========================================================================== */
+.fashion-storefront .about-cyber-layer {
+    max-width: 1200px;
+    margin: 36px auto 72px;
+    padding: 0 clamp(16px, 4vw, 36px);
+    position: relative;
+    z-index: 10;
+}
+
+/* About Hero Main Container */
+.fashion-storefront .about-hero {
+    background: #ffffff;
+    border: 1px solid #e8e1d8;
+    border-radius: 16px;
+    padding: clamp(38px, 6vw, 68px) clamp(20px, 4vw, 48px);
+    text-align: center;
+    box-shadow: 0 10px 40px rgba(48, 41, 35, 0.045);
+    margin-bottom: 28px;
+    position: relative;
+}
+
+/* Eyebrow Pill Badge */
+.fashion-storefront .about-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 16px;
+    border-radius: 9999px;
+    font-size: 12px;
+    font-weight: 700;
+    background: #faf8f5;
+    border: 1px solid #ded5cb;
+    color: #805f4b;
+    margin-bottom: 18px;
+    letter-spacing: 0.3px;
+}
+
+.fashion-storefront .about-hero h2 {
+    font-family: Georgia, 'Kantumruy Pro', serif;
+    font-size: clamp(26px, 4.2vw, 38px);
+    font-weight: 700;
+    color: #203f3a;
+    line-height: 1.35;
+    margin: 0 auto 16px;
+    max-width: 860px;
+}
+
+.fashion-storefront .about-lead {
+    font-size: clamp(14px, 1.8vw, 15.5px);
+    color: #756d64;
+    max-width: 820px;
+    margin: 0 auto 30px;
+    line-height: 1.85;
+}
+
+/* CTA Action Buttons - Luxury Fashion Palette (NO CYAN GLOW) */
+.fashion-storefront .about-hero-actions {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+    margin-bottom: 38px;
+}
+
+.fashion-storefront .about-hero-actions .cyber-glow-btn,
+.fashion-storefront .about-hero-actions a,
+.fashion-storefront .about-contact .cyber-glow-btn,
+.fashion-storefront .about-contact a {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 9px !important;
+    padding: 13px 26px !important;
+    border-radius: 4px !important;
+    font-size: 14px !important;
+    font-weight: 700 !important;
+    text-decoration: none !important;
+    box-shadow: none !important;
+    cursor: pointer !important;
+    transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease !important;
+}
+
+/* Primary Button: Browse / Shop Collection */
+.fashion-storefront .about-hero-actions .cyber-glow-btn:first-child,
+.fashion-storefront .about-hero-actions .about-btn-primary,
+.fashion-storefront .about-contact .cyber-glow-btn:first-child,
+.fashion-storefront .about-contact .about-btn-primary {
+    background: #203f3a !important;
+    border: 1px solid #203f3a !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 14px rgba(32, 63, 58, 0.22) !important;
+}
+
+.fashion-storefront .about-hero-actions .cyber-glow-btn:first-child:hover,
+.fashion-storefront .about-hero-actions .about-btn-primary:hover,
+.fashion-storefront .about-contact .cyber-glow-btn:first-child:hover,
+.fashion-storefront .about-contact .about-btn-primary:hover {
+    background: #2d564f !important;
+    border-color: #2d564f !important;
+    color: #ffffff !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 6px 20px rgba(32, 63, 58, 0.32) !important;
+}
+
+.fashion-storefront .about-hero-actions .cyber-glow-btn:first-child i,
+.fashion-storefront .about-hero-actions .about-btn-primary i,
+.fashion-storefront .about-contact .cyber-glow-btn:first-child i,
+.fashion-storefront .about-contact .about-btn-primary i {
+    color: #ffffff !important;
+}
+
+/* Secondary Button: Contact Customer Support */
+.fashion-storefront .about-hero-actions .cyber-glow-btn:nth-child(2),
+.fashion-storefront .about-hero-actions .about-btn-secondary,
+.fashion-storefront .about-contact .cyber-glow-btn:nth-child(2),
+.fashion-storefront .about-contact .about-btn-secondary {
+    background: #faf8f5 !important;
+    border: 1.5px solid #ded5cb !important;
+    color: #332d28 !important;
+    box-shadow: 0 2px 8px rgba(48, 41, 35, 0.04) !important;
+}
+
+.fashion-storefront .about-hero-actions .cyber-glow-btn:nth-child(2):hover,
+.fashion-storefront .about-hero-actions .about-btn-secondary:hover,
+.fashion-storefront .about-contact .cyber-glow-btn:nth-child(2):hover,
+.fashion-storefront .about-contact .about-btn-secondary:hover {
+    background: #805f4b !important;
+    border-color: #805f4b !important;
+    color: #ffffff !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 6px 18px rgba(128, 95, 75, 0.24) !important;
+}
+
+.fashion-storefront .about-hero-actions .cyber-glow-btn:nth-child(2) i,
+.fashion-storefront .about-hero-actions .about-btn-secondary i,
+.fashion-storefront .about-contact .cyber-glow-btn:nth-child(2) i,
+.fashion-storefront .about-contact .about-btn-secondary i {
+    color: #805f4b !important;
+    transition: color 0.15s ease;
+}
+
+.fashion-storefront .about-hero-actions .cyber-glow-btn:nth-child(2):hover i,
+.fashion-storefront .about-hero-actions .about-btn-secondary:hover i,
+.fashion-storefront .about-contact .cyber-glow-btn:nth-child(2):hover i,
+.fashion-storefront .about-contact .about-btn-secondary:hover i {
+    color: #ffffff !important;
+}
+
+/* 3 Stat / Fact Cards */
+.fashion-storefront .about-facts {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 18px;
+    max-width: 860px;
+    margin: 0 auto;
+}
+
+.fashion-storefront .about-fact {
+    padding: 24px 20px;
+    border-radius: 10px;
+    background: #faf8f5;
+    border: 1px solid #ede7df;
+    text-align: center;
+    box-shadow: 0 2px 10px rgba(48, 41, 35, 0.02);
+    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.fashion-storefront .about-fact:hover {
+    transform: translateY(-3px);
+    border-color: #805f4b;
+    box-shadow: 0 8px 24px rgba(48, 41, 35, 0.07);
+}
+
+.fashion-storefront .about-fact strong {
+    display: block;
+    font-size: 28px;
+    font-weight: 800;
+    color: #203f3a;
+    margin-bottom: 6px;
+    font-family: 'Space Grotesk', Georgia, sans-serif;
+    letter-spacing: -0.5px;
+}
+
+.fashion-storefront .about-fact span {
+    font-size: 13px;
+    font-weight: 600;
+    color: #756d64;
+    line-height: 1.5;
+    display: block;
+}
+
+/* Sub-sections (Story, Values, Steps) */
+.fashion-storefront .about-section {
+    margin-top: 28px;
+    padding: clamp(32px, 5vw, 52px);
+    background: #ffffff;
+    border: 1px solid #e8e1d8;
+    border-radius: 14px;
+    box-shadow: 0 8px 30px rgba(48, 41, 35, 0.04);
+}
+
+.fashion-storefront .about-section-heading {
+    text-align: center;
+    max-width: 720px;
+    margin: 0 auto 36px;
+}
+
+.fashion-storefront .about-section-heading span {
+    font-size: 12px;
+    font-weight: 700;
+    color: #805f4b;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    display: block;
+    margin-bottom: 8px;
+}
+
+.fashion-storefront .about-section-heading h3 {
+    font-family: Georgia, 'Kantumruy Pro', serif;
+    font-size: clamp(22px, 3.2vw, 30px);
+    font-weight: 700;
+    color: #203f3a;
+    margin: 0 0 10px;
+}
+
+.fashion-storefront .about-section-heading p {
+    font-size: 14.5px;
+    color: #756d64;
+    line-height: 1.7;
+    margin: 0;
+}
+
+.fashion-storefront .about-story-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 22px;
+}
+
+.fashion-storefront .about-values-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 22px;
+}
+
+.fashion-storefront .about-steps-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 20px;
+    counter-reset: about-step;
+}
+
+.fashion-storefront .about-info-card,
+.fashion-storefront .about-value-card,
+.fashion-storefront .about-step-card {
+    padding: 26px 22px;
+    border-radius: 10px;
+    background: #faf8f5;
+    border: 1px solid #ede7df;
+    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.fashion-storefront .about-info-card:hover,
+.fashion-storefront .about-value-card:hover,
+.fashion-storefront .about-step-card:hover {
+    transform: translateY(-3px);
+    border-color: #805f4b;
+    box-shadow: 0 8px 24px rgba(48, 41, 35, 0.06);
+}
+
+.fashion-storefront .about-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 10px;
+    background: #efeae2;
+    color: #805f4b;
+    display: grid;
+    place-items: center;
+    font-size: 19px;
+    margin-bottom: 16px;
+    border: 1px solid #e2d9cd;
+}
+
+.fashion-storefront .about-info-card h4,
+.fashion-storefront .about-value-card h4,
+.fashion-storefront .about-step-card h4 {
+    font-size: 16px;
+    font-weight: 700;
+    color: #203f3a;
+    margin: 0 0 10px;
+}
+
+.fashion-storefront .about-info-card p,
+.fashion-storefront .about-value-card p,
+.fashion-storefront .about-step-card p {
+    font-size: 13.5px;
+    color: #756d64;
+    line-height: 1.8;
+    margin: 0;
+}
+
+.fashion-storefront .about-step-card {
+    position: relative;
+}
+
+.fashion-storefront .about-step-card::before {
+    counter-increment: about-step;
+    content: "0" counter(about-step);
+    font-size: 20px;
+    font-weight: 800;
+    color: #805f4b;
+    font-family: 'Space Grotesk', sans-serif;
+    display: block;
+    margin-bottom: 12px;
+}
+
+/* Contact CTA Box */
+.fashion-storefront .about-contact {
+    margin-top: 28px;
+    padding: clamp(34px, 5vw, 56px);
+    background: linear-gradient(135deg, #f7f4ef 0%, #efeae2 100%);
+    border: 1px solid #ded5cb;
+    border-radius: 14px;
+    text-align: center;
+}
+
+.fashion-storefront .about-contact h3 {
+    font-family: Georgia, 'Kantumruy Pro', serif;
+    font-size: clamp(22px, 3.2vw, 30px);
+    color: #203f3a;
+    font-weight: 700;
+}
+
+.fashion-storefront .about-contact p {
+    color: #756d64;
+}
+
+.fashion-storefront .about-page-footer {
+    color: #81766d;
+}
+
+/* ==========================================================================
+   ABOUT US PAGE • DARK MODE OVERRIDES
+   ========================================================================== */
+[data-theme="dark"] .fashion-storefront .about-hero,
+[data-theme="dark"].fashion-storefront .about-hero,
+[data-theme="dark"] .fashion-storefront .about-section,
+[data-theme="dark"].fashion-storefront .about-section {
+    background: #171513 !important;
+    border-color: #332d28 !important;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.45) !important;
+}
+
+[data-theme="dark"] .fashion-storefront .about-eyebrow,
+[data-theme="dark"].fashion-storefront .about-eyebrow {
+    background: #201b17 !important;
+    border-color: #383028 !important;
+    color: #d8c3b4 !important;
+}
+
+[data-theme="dark"] .fashion-storefront .about-hero h2,
+[data-theme="dark"].fashion-storefront .about-hero h2,
+[data-theme="dark"] .fashion-storefront .about-section-heading h3,
+[data-theme="dark"].fashion-storefront .about-section-heading h3,
+[data-theme="dark"] .fashion-storefront .about-info-card h4,
+[data-theme="dark"].fashion-storefront .about-info-card h4,
+[data-theme="dark"] .fashion-storefront .about-value-card h4,
+[data-theme="dark"].fashion-storefront .about-value-card h4,
+[data-theme="dark"] .fashion-storefront .about-step-card h4,
+[data-theme="dark"].fashion-storefront .about-step-card h4,
+[data-theme="dark"] .fashion-storefront .about-contact h3,
+[data-theme="dark"].fashion-storefront .about-contact h3 {
+    color: #f2eee9 !important;
+}
+
+[data-theme="dark"] .fashion-storefront .about-lead,
+[data-theme="dark"].fashion-storefront .about-lead,
+[data-theme="dark"] .fashion-storefront .about-section-heading p,
+[data-theme="dark"].fashion-storefront .about-section-heading p,
+[data-theme="dark"] .fashion-storefront .about-info-card p,
+[data-theme="dark"].fashion-storefront .about-info-card p,
+[data-theme="dark"] .fashion-storefront .about-value-card p,
+[data-theme="dark"].fashion-storefront .about-value-card p,
+[data-theme="dark"] .fashion-storefront .about-step-card p,
+[data-theme="dark"].fashion-storefront .about-step-card p,
+[data-theme="dark"] .fashion-storefront .about-contact p,
+[data-theme="dark"].fashion-storefront .about-contact p {
+    color: #a89e93 !important;
+}
+
+[data-theme="dark"] .fashion-storefront .about-fact,
+[data-theme="dark"].fashion-storefront .about-fact,
+[data-theme="dark"] .fashion-storefront .about-info-card,
+[data-theme="dark"].fashion-storefront .about-info-card,
+[data-theme="dark"] .fashion-storefront .about-value-card,
+[data-theme="dark"].fashion-storefront .about-value-card,
+[data-theme="dark"] .fashion-storefront .about-step-card,
+[data-theme="dark"].fashion-storefront .about-step-card {
+    background: #1e1915 !important;
+    border-color: #383028 !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3) !important;
+}
+
+[data-theme="dark"] .fashion-storefront .about-fact strong,
+[data-theme="dark"].fashion-storefront .about-fact strong {
+    color: #d8c3b4 !important;
+}
+
+[data-theme="dark"] .fashion-storefront .about-fact span,
+[data-theme="dark"].fashion-storefront .about-fact span {
+    color: #a89e93 !important;
+}
+
+[data-theme="dark"] .fashion-storefront .about-icon,
+[data-theme="dark"].fashion-storefront .about-icon {
+    background: #2a231d !important;
+    border-color: #383028 !important;
+    color: #d8c3b4 !important;
+}
+
+[data-theme="dark"] .fashion-storefront .about-contact,
+[data-theme="dark"].fashion-storefront .about-contact {
+    background: #181512 !important;
+    border-color: #383028 !important;
+}
+
+[data-theme="dark"] .fashion-storefront .about-hero-actions .cyber-glow-btn:first-child,
+[data-theme="dark"].fashion-storefront .about-hero-actions .cyber-glow-btn:first-child,
+[data-theme="dark"] .fashion-storefront .about-hero-actions .about-btn-primary,
+[data-theme="dark"].fashion-storefront .about-hero-actions .about-btn-primary,
+[data-theme="dark"] .fashion-storefront .about-contact .cyber-glow-btn:first-child,
+[data-theme="dark"].fashion-storefront .about-contact .cyber-glow-btn:first-child,
+[data-theme="dark"] .fashion-storefront .about-contact .about-btn-primary,
+[data-theme="dark"].fashion-storefront .about-contact .about-btn-primary {
+    background: #203f3a !important;
+    border-color: #2d564f !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45) !important;
+}
+
+[data-theme="dark"] .fashion-storefront .about-hero-actions .cyber-glow-btn:first-child:hover,
+[data-theme="dark"].fashion-storefront .about-hero-actions .cyber-glow-btn:first-child:hover,
+[data-theme="dark"] .fashion-storefront .about-hero-actions .about-btn-primary:hover,
+[data-theme="dark"].fashion-storefront .about-hero-actions .about-btn-primary:hover,
+[data-theme="dark"] .fashion-storefront .about-contact .cyber-glow-btn:first-child:hover,
+[data-theme="dark"].fashion-storefront .about-contact .cyber-glow-btn:first-child:hover,
+[data-theme="dark"] .fashion-storefront .about-contact .about-btn-primary:hover,
+[data-theme="dark"].fashion-storefront .about-contact .about-btn-primary:hover {
+    background: #2d564f !important;
+    border-color: #34d399 !important;
+}
+
+[data-theme="dark"] .fashion-storefront .about-hero-actions .cyber-glow-btn:nth-child(2),
+[data-theme="dark"].fashion-storefront .about-hero-actions .cyber-glow-btn:nth-child(2),
+[data-theme="dark"] .fashion-storefront .about-hero-actions .about-btn-secondary,
+[data-theme="dark"].fashion-storefront .about-hero-actions .about-btn-secondary,
+[data-theme="dark"] .fashion-storefront .about-contact .cyber-glow-btn:nth-child(2),
+[data-theme="dark"].fashion-storefront .about-contact .cyber-glow-btn:nth-child(2),
+[data-theme="dark"] .fashion-storefront .about-contact .about-btn-secondary,
+[data-theme="dark"].fashion-storefront .about-contact .about-btn-secondary {
+    background: #1e1915 !important;
+    border-color: #383028 !important;
+    color: #f2eee9 !important;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3) !important;
+}
+
+[data-theme="dark"] .fashion-storefront .about-hero-actions .cyber-glow-btn:nth-child(2) i,
+[data-theme="dark"].fashion-storefront .about-hero-actions .cyber-glow-btn:nth-child(2) i,
+[data-theme="dark"] .fashion-storefront .about-hero-actions .about-btn-secondary i,
+[data-theme="dark"].fashion-storefront .about-hero-actions .about-btn-secondary i,
+[data-theme="dark"] .fashion-storefront .about-contact .cyber-glow-btn:nth-child(2) i,
+[data-theme="dark"].fashion-storefront .about-contact .cyber-glow-btn:nth-child(2) i,
+[data-theme="dark"] .fashion-storefront .about-contact .about-btn-secondary i,
+[data-theme="dark"].fashion-storefront .about-contact .about-btn-secondary i {
+    color: #d8c3b4 !important;
+}
+
+[data-theme="dark"] .fashion-storefront .about-hero-actions .cyber-glow-btn:nth-child(2):hover,
+[data-theme="dark"].fashion-storefront .about-hero-actions .cyber-glow-btn:nth-child(2):hover,
+[data-theme="dark"] .fashion-storefront .about-hero-actions .about-btn-secondary:hover,
+[data-theme="dark"].fashion-storefront .about-hero-actions .about-btn-secondary:hover,
+[data-theme="dark"] .fashion-storefront .about-contact .cyber-glow-btn:nth-child(2):hover,
+[data-theme="dark"].fashion-storefront .about-contact .cyber-glow-btn:nth-child(2):hover,
+[data-theme="dark"] .fashion-storefront .about-contact .about-btn-secondary:hover,
+[data-theme="dark"].fashion-storefront .about-contact .about-btn-secondary:hover {
+    background: #805f4b !important;
+    border-color: #805f4b !important;
+    color: #ffffff !important;
+}
+
+.fashion-storefront .support-cyber-layer {
+    width: min(1320px, 100%);
+    min-height: calc(100vh - 64px);
+    margin: 0 auto;
+    padding: clamp(28px, 5vw, 64px) clamp(16px, 4vw, 48px);
+}
+
+.fashion-storefront .support-cyber-card {
+    min-height: 0;
+    border: 1px solid #e8e1d8;
+    border-radius: 3px;
+    background:
+        radial-gradient(ellipse at 12% 92%, rgba(193, 156, 126, 0.12), transparent 35%),
+        #fff;
+    box-shadow: 0 8px 30px rgba(48, 41, 35, 0.045);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+
+.fashion-storefront .support-intro h2 {
+    color: #302923;
+    font-family: Georgia, 'Kantumruy Pro', serif;
+    font-size: clamp(28px, 3vw, 40px);
+    font-weight: 500;
+}
+
+.fashion-storefront .support-intro p {
+    color: #756d64;
+}
+
+.fashion-storefront .support-intro .dna-badge {
+    border-color: #ded2c5;
+    border-radius: 2px;
+    background: #f5f0e9;
+    color: #805f4b;
+    box-shadow: none;
+}
+
+.fashion-storefront .support-form .form-group label {
+    color: #514a43;
+}
+
+.fashion-storefront .support-form .form-control-cyber {
+    border: 1px solid #ded5cb;
+    border-radius: 3px;
+    background: #faf8f5;
+    color: #302923;
+    box-shadow: none;
+}
+
+.fashion-storefront .support-form .form-control-cyber::placeholder {
+    color: #a0968a;
+}
+
+.fashion-storefront .support-form .form-control-cyber:focus {
+    border-color: #98664f;
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(152, 102, 79, 0.12);
+}
+
+.fashion-storefront .support-form .cyber-buy-action {
+    border: 1px solid #332d28;
+    border-radius: 2px;
+    background: #332d28;
+    color: #fff;
+    box-shadow: none;
+}
+
+.fashion-storefront .support-form .cyber-buy-action:hover {
+    transform: translateY(-1px);
+    background: #805f4b;
+    box-shadow: none;
+}
+
+.fashion-storefront .support-after-form .alert-cyber {
+    border-radius: 3px;
+}
+
+.fashion-storefront .support-after-form .alert-success {
+    border-color: #68765e;
+    background: #eff2eb;
+    color: #526047;
+}
+
+.fashion-storefront .support-after-form .alert-error {
+    border-color: #b87470;
+    background: #fbefed;
+    color: #995d48;
+}
+
+@media (max-width: 860px) {
+    .fashion-storefront .hero-centerpiece {
+        min-height: 0;
+    }
+
+    .fashion-storefront .hero-visual-side {
+        width: min(78vw, 330px);
+    }
+
+    .fashion-storefront .nav-hologram-links {
+        display: none;
+    }
+
+    .fashion-storefront .mobile-nav-toggle {
+        display: flex;
+    }
+}
+
+@media (max-width: 600px) {
+    .fashion-storefront .cyber-nav-container {
+        padding: 0 12px;
+    }
+
+    .fashion-storefront .cyber-island-nav {
+        padding: 10px 0;
+    }
+
+    .fashion-storefront .hero-deck {
+        margin-top: 22px;
+        padding: 0 14px;
+    }
+
+    .fashion-storefront .hero-centerpiece {
+        padding: 34px 22px;
+    }
+
+    .fashion-storefront .hero-centerpiece h2 {
+        font-size: clamp(31px, 9vw, 42px);
+    }
+
+    .fashion-storefront .hero-centerpiece p {
+        font-size: 14px;
+    }
+
+    .fashion-storefront .hero-visual-side {
+        height: 220px;
+    }
+
+    .fashion-storefront .catalog-header {
+        margin: 58px auto 22px;
+        padding: 0 16px;
+    }
+
+    .fashion-storefront .cyber-cards-matrix {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+        padding: 0 12px 48px;
+    }
+
+    .fashion-storefront .cyber-card {
+        padding: 8px 8px 12px;
+    }
+
+    .fashion-storefront .card-top-tag {
+        top: 14px;
+        right: 14px;
+        padding: 4px 6px;
+        font-size: 8px;
+    }
+
+    .fashion-storefront .card-hologram-frame {
+        height: clamp(125px, 38vw, 190px);
+        margin-bottom: 12px;
+        padding: 12px;
+    }
+
+    .fashion-storefront .card-app-title {
+        font-size: 14px;
+    }
+
+    .fashion-storefront .card-feature-specs {
+        font-size: 9px;
+    }
+
+    .fashion-storefront .cyber-card .cyber-buy-action {
+        min-height: 38px;
+        padding: 8px 5px;
+        font-size: 10px;
+    }
+
+    .fashion-storefront .cyber-trust-grid {
+        margin-bottom: 48px;
+        padding: 0 12px;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 9px;
+    }
+
+    .fashion-storefront .cyber-trust-card {
+        padding: 12px 10px;
+        gap: 9px;
+    }
+
+    .fashion-storefront .trust-glow-icon {
+        width: 36px;
+        height: 36px;
+        font-size: 15px;
+    }
+
+    .fashion-storefront .trust-texts h4 {
+        font-size: 12px;
+    }
+
+    .fashion-storefront .trust-texts p {
+        font-size: 10px;
+    }
+
+    .fashion-storefront .cyber-footer {
+        margin: 0 12px 18px;
+        padding: 26px 18px;
+    }
+
+    .fashion-storefront .about-cyber-layer {
+        margin: 22px auto 44px;
+        padding: 0 12px;
+    }
+
+    .fashion-storefront .support-cyber-layer {
+        min-height: calc(100vh - 64px);
+        padding: 24px 12px;
+    }
+
+    .fashion-storefront .support-cyber-card {
+        gap: 20px;
+        padding: 24px 18px;
+    }
+}
+
+@media (max-width: 380px) {
+    .fashion-storefront .cyber-cards-matrix {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .fashion-storefront .hero-centerpiece {
+        padding: 28px 16px;
+    }
+
+    .fashion-storefront .hero-stats-row {
+        gap: 14px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .fashion-storefront .fashion-shop-cta,
+    .fashion-storefront .cyber-card,
+    .fashion-storefront .cyber-buy-action,
+    .fashion-storefront .nav-actions > .cyber-glow-btn {
+        transition: none;
+    }
+}
+
+
+/* ==========================================================================
+   4K STORE • PREMIUM EDITORIAL FASHION STOREFRONT STYLING
+   ========================================================================== */
+
+/* 1. Luxury Search Bar */
+.fashion-storefront .cyber-search-box {
+    position: relative;
+    max-width: 660px;
+    width: 100%;
+    margin: 22px auto 26px;
+}
+
+.fashion-storefront .cyber-search-box input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 14px 44px 14px 48px;
+    border-radius: 9999px;
+    background: #ffffff !important;
+    border: 1.5px solid #ded5cb !important;
+    color: #2e2924 !important;
+    font-size: 14px;
+    font-family: inherit;
+    box-shadow: 0 4px 18px rgba(48, 41, 35, 0.05) !important;
+    outline: none;
+    transition: all 0.2s ease;
+}
+
+.fashion-storefront .cyber-search-box input:focus {
+    border-color: #805f4b !important;
+    background: #ffffff !important;
+    box-shadow: 0 0 0 4px rgba(128, 95, 75, 0.12), 0 6px 22px rgba(48, 41, 35, 0.08) !important;
+}
+
+.fashion-storefront .cyber-search-box input::placeholder {
+    color: #958b80 !important;
+    font-weight: 400;
+}
+
+.fashion-storefront .search-beam-icon {
+    position: absolute;
+    left: 18px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #805f4b !important;
+    font-size: 15px;
+    pointer-events: none;
+    transition: color 0.2s ease;
+    text-shadow: none !important;
+}
+
+.fashion-storefront .cyber-search-box input:focus ~ .search-beam-icon {
+    color: #203f3a !important;
+}
+
+.fashion-storefront .search-clear-btn {
+    position: absolute;
+    right: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    border: 0;
+    color: #9c9489;
+    cursor: pointer;
+    font-size: 14px;
+    padding: 4px 6px;
+    display: none;
+    transition: color 0.15s ease;
+}
+
+.fashion-storefront .search-clear-btn:hover {
+    color: #203f3a;
+}
+
+/* 2. Category Filter Pills */
+.fashion-storefront .category-tab-strip {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 0 auto 20px;
+    max-width: 960px;
+}
+
+.fashion-storefront .cyber-category-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 18px;
+    border-radius: 9999px !important;
+    background: #ffffff !important;
+    border: 1.5px solid #ded5cb !important;
+    color: #554d45 !important;
+    font-size: 13.5px;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(48, 41, 35, 0.04) !important;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    outline: none;
+    user-select: none;
+    text-decoration: none;
+}
+
+.fashion-storefront .cyber-category-pill i {
+    font-size: 13px;
+    color: #805f4b;
+    transition: color 0.2s ease;
+}
+
+.fashion-storefront .cyber-category-pill .cat-pill-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 18px;
+    padding: 0 6px;
+    border-radius: 9999px;
+    background: #f2eee8;
+    color: #6e645a;
+    font-size: 11.5px;
+    font-weight: 700;
+    margin-left: 2px;
+    transition: all 0.2s ease;
+}
+
+.fashion-storefront .cyber-category-pill:hover {
+    background: #f7f3ed !important;
+    border-color: #c4b5a5 !important;
+    color: #203f3a !important;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(48, 41, 35, 0.08) !important;
+}
+
+.fashion-storefront .cyber-category-pill:hover i {
+    color: #203f3a;
+}
+
+.fashion-storefront .cyber-category-pill:hover .cat-pill-count {
+    background: #e8e2d8;
+    color: #203f3a;
+}
+
+.fashion-storefront .cyber-category-pill.active {
+    background: #203f3a !important;
+    border-color: #203f3a !important;
+    color: #ffffff !important;
+    box-shadow: 0 6px 20px rgba(32, 63, 58, 0.28) !important;
+    transform: translateY(-2px);
+}
+
+.fashion-storefront .cyber-category-pill.active i {
+    color: #f2cbaf !important;
+}
+
+.fashion-storefront .cyber-category-pill.active .cat-pill-count {
+    background: rgba(255, 255, 255, 0.22) !important;
+    color: #ffffff !important;
+}
+
+/* 3. Catalog Results & Sorting Toolbar */
+.fashion-storefront .catalog-toolbar-bar {
+    max-width: 1320px;
+    margin: 16px auto 28px;
+    padding: 0 clamp(16px, 4vw, 48px);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 14px;
+}
+
+.fashion-storefront .catalog-count-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #6e645a;
+    background: #ffffff;
+    padding: 8px 16px;
+    border-radius: 9999px;
+    border: 1.5px solid #ded5cb;
+    box-shadow: 0 2px 8px rgba(48, 41, 35, 0.03);
+}
+
+.fashion-storefront .catalog-count-pill strong {
+    color: #203f3a;
+    font-weight: 800;
+}
+
+.fashion-storefront .catalog-sort-select {
+    padding: 9px 18px;
+    border-radius: 9999px;
+    border: 1.5px solid #ded5cb;
+    background: #ffffff;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    color: #2e2924;
+    outline: none;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(48, 41, 35, 0.03);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.fashion-storefront .catalog-sort-select:focus {
+    border-color: #805f4b;
+    box-shadow: 0 0 0 3px rgba(128, 95, 75, 0.12);
+}
+
+/* 4. Luxury Product Card Media & Frames */
+.fashion-storefront .card-hologram-frame {
+    width: 100% !important;
+    height: 240px !important;
+    margin: 0 0 14px !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    border: 1px solid #eee8df !important;
+    border-radius: 4px !important;
+    background: #f4f0ea !important;
+    box-shadow: none !important;
+    position: relative !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+.fashion-storefront .card-hologram-frame img {
+    width: 100% !important;
+    height: 100% !important;
+    max-width: none !important;
+    max-height: none !important;
+    object-fit: cover !important;
+    filter: none !important;
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.fashion-storefront .cyber-card:hover .card-hologram-frame img {
+    transform: scale(1.06) !important;
+}
+
+.fashion-storefront .card-top-tag {
+    z-index: 2;
+    top: 18px;
+    right: 18px;
+    padding: 4px 10px;
+    border-radius: 9999px;
+    background: rgba(255, 255, 255, 0.94);
+    border: 1px solid #bbf7d0;
+    color: #166534;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+}
+
+/* 5. Checkout Modal & Order Summary Enhancements */
+.fashion-storefront .checkout-items-summary-box {
+    background: #faf8f5 !important;
+    border: 1px solid #e8e1d8 !important;
+    border-radius: 12px !important;
+    padding: 14px 18px !important;
+    margin: 16px 0 !important;
+    text-align: left !important;
+    max-height: 200px !important;
+    overflow-y: auto !important;
+}
+
+.fashion-storefront .checkout-item-name {
+    font-weight: 700;
+    color: #203f3a;
+    font-size: 13.5px;
+}
+
+.fashion-storefront .checkout-item-qty {
+    font-size: 12px;
+    color: #756d64;
+}
+
+.fashion-storefront .checkout-item-total {
+    color: #203f3a;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.fashion-storefront .checkout-total-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 16px;
+    font-weight: 800;
+    color: #203f3a;
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 1px dashed #ded5cb;
+}
+
+.fashion-storefront .checkout-khqr-banner {
+    background: #f0f7f6;
+    border: 1px solid #c2e2dc;
+    border-radius: 10px;
+    padding: 12px 16px;
+    margin: 14px 0;
+    font-size: 13px;
+    color: #203f3a;
+    text-align: left;
+    line-height: 1.5;
+}
+
+.fashion-storefront .success-notify-text {
+    font-size: 14px;
+    color: #554d45;
+    line-height: 1.6;
+}
+
+.fashion-storefront .success-ref-pill {
+    background: #f0f7f6;
+    border: 1px solid #c2e2dc;
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin: 14px 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: #203f3a;
+}
+
+/* 6. Dark Mode Overrides for Fashion Storefront */
+body.fashion-storefront[data-theme="dark"] .cyber-search-box input {
+    background: #171d28 !important;
+    border-color: #343c4a !important;
+    color: #edf1f7 !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3) !important;
+}
+
+body.fashion-storefront[data-theme="dark"] .cyber-search-box input:focus {
+    border-color: #34d399 !important;
+    box-shadow: 0 0 0 4px rgba(52, 211, 153, 0.2) !important;
+}
+
+body.fashion-storefront[data-theme="dark"] .cyber-search-box input::placeholder {
+    color: #8490a1 !important;
+}
+
+body.fashion-storefront[data-theme="dark"] .search-beam-icon {
+    color: #34d399 !important;
+}
+
+body.fashion-storefront[data-theme="dark"] .search-clear-btn {
+    color: #8490a1;
+}
+
+body.fashion-storefront[data-theme="dark"] .search-clear-btn:hover {
+    color: #edf1f7;
+}
+
+body.fashion-storefront[data-theme="dark"] .cyber-category-pill {
+    background: #171d28 !important;
+    border-color: #343c4a !important;
+    color: #b0bac8 !important;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2) !important;
+}
+
+body.fashion-storefront[data-theme="dark"] .cyber-category-pill i {
+    color: #8490a1;
+}
+
+body.fashion-storefront[data-theme="dark"] .cyber-category-pill .cat-pill-count {
+    background: #222b39;
+    color: #94a3b8;
+}
+
+body.fashion-storefront[data-theme="dark"] .cyber-category-pill:hover {
+    background: #202836 !important;
+    border-color: #4b5563 !important;
+    color: #edf1f7 !important;
+}
+
+body.fashion-storefront[data-theme="dark"] .cyber-category-pill.active {
+    background: #203f3a !important;
+    border-color: #34d399 !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 16px rgba(52, 211, 153, 0.2) !important;
+}
+
+body.fashion-storefront[data-theme="dark"] .cyber-category-pill.active i {
+    color: #34d399 !important;
+}
+
+body.fashion-storefront[data-theme="dark"] .cyber-category-pill.active .cat-pill-count {
+    background: rgba(52, 211, 153, 0.3) !important;
+    color: #ffffff !important;
+}
+
+body.fashion-storefront[data-theme="dark"] .catalog-count-pill,
+body.fashion-storefront[data-theme="dark"] .catalog-sort-select {
+    background: #171d28;
+    border-color: #343c4a;
+    color: #edf1f7;
+}
+
+body.fashion-storefront[data-theme="dark"] .catalog-count-pill strong {
+    color: #34d399;
+}
+
+body.fashion-storefront[data-theme="dark"] .card-hologram-frame {
+    background: #121822 !important;
+    border-color: #293444 !important;
+}
+
+body.fashion-storefront[data-theme="dark"] .card-top-tag {
+    background: #171d28;
+    border-color: #293444;
+    color: #4ade80;
+}
+
+body.fashion-storefront[data-theme="dark"] .checkout-items-summary-box {
+    background: #10151e !important;
+    border-color: #343c4a !important;
+}
+
+body.fashion-storefront[data-theme="dark"] .checkout-item-name,
+body.fashion-storefront[data-theme="dark"] .checkout-item-total,
+body.fashion-storefront[data-theme="dark"] .checkout-total-row {
+    color: #edf1f7 !important;
+}
+
+body.fashion-storefront[data-theme="dark"] .checkout-item-qty {
+    color: #94a3b8;
+}
+
+body.fashion-storefront[data-theme="dark"] .checkout-khqr-banner {
+    background: #16222b;
+    border-color: #28444a;
+    color: #edf1f7;
+}
+
+body.fashion-storefront[data-theme="dark"] .success-notify-text {
+    color: #b0bac8;
+}
+
+body.fashion-storefront[data-theme="dark"] .success-ref-pill {
+    background: #16222b;
+    border-color: #28444a;
+    color: #34d399;
+}
+
+/* Quick View and Cart Drawer Dark Mode */
+body.fashion-storefront[data-theme="dark"] .quickview-card,
+body.fashion-storefront[data-theme="dark"] .cart-drawer-panel {
+    background: #171d28;
+    border-color: #343c4a;
+    color: #edf1f7;
+}
+
+body.fashion-storefront[data-theme="dark"] .quickview-image-pane {
+    background: #121822;
+}
+
+body.fashion-storefront[data-theme="dark"] .quickview-info-pane h3,
+body.fashion-storefront[data-theme="dark"] .cart-drawer-header h3,
+body.fashion-storefront[data-theme="dark"] .cart-item-name,
+body.fashion-storefront[data-theme="dark"] .cart-item-price,
+body.fashion-storefront[data-theme="dark"] .cart-subtotal-line {
+    color: #edf1f7;
+}
+
+body.fashion-storefront[data-theme="dark"] .cart-drawer-header,
+body.fashion-storefront[data-theme="dark"] .cart-drawer-footer,
+body.fashion-storefront[data-theme="dark"] .cart-item-row {
+    border-color: #283344;
+}
+
+body.fashion-storefront[data-theme="dark"] .cart-drawer-footer {
+    background: #131923;
+}
+
+body.fashion-storefront[data-theme="dark"] .cart-qty-stepper {
+    background: #10151e;
+    border-color: #343c4a;
+}
+
+body.fashion-storefront[data-theme="dark"] .cart-qty-stepper button {
+    color: #edf1f7;
+}
+
+body.fashion-storefront[data-theme="dark"] .btn-card-quickview {
+    background: #171d28;
+    border-color: #343c4a;
+    color: #edf1f7;
+}
+
+body.fashion-storefront[data-theme="dark"] .btn-card-quickview:hover {
+    background: #203f3a;
+    border-color: #34d399;
+    color: #ffffff;
+}
+
+body.fashion-storefront[data-theme="dark"] .btn-card-addcart {
+    border-color: #34d399;
+    color: #34d399;
+}
+
+body.fashion-storefront[data-theme="dark"] .btn-card-addcart:hover {
+    background: #34d399;
+    color: #10151e;
+}
+
+body.fashion-storefront[data-theme="dark"] .floating-cart-pill {
+    background: #203f3a;
+    border-color: #34d399;
+    color: #ffffff;
+}
+
+
+/* ==========================================================================
+   PRODUCT CARDS DISCOUNT BADGES & PROMOTION PRICING
+   ========================================================================== */
+.fashion-storefront .card-discount-tag {
+    position: absolute;
+    top: 14px;
+    left: 14px;
+    z-index: 4;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    border-radius: 9999px;
+    background: #b91c1c;
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.3px;
+    box-shadow: 0 4px 10px rgba(185, 28, 28, 0.35);
+    animation: pulse-discount-badge 2s infinite ease-in-out;
+}
+
+@keyframes pulse-discount-badge {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
+.fashion-storefront .cyber-price-pill.has-discount {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    margin: auto 0 10px;
+}
+
+.fashion-storefront .price-row-main {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.fashion-storefront .price-current {
+    font-size: 18px;
+    font-weight: 800;
+    color: #b91c1c;
+}
+
+.fashion-storefront .price-original {
+    font-size: 13px;
+    font-weight: 600;
+    color: #9c9489;
+    text-decoration: line-through;
+}
+
+.fashion-storefront .price-discount-tag {
+    font-size: 10.5px;
+    font-weight: 800;
+    padding: 1px 6px;
+    border-radius: 4px;
+    background: #fee2e2;
+    color: #b91c1c;
+    display: inline-block;
+}
+
+.fashion-storefront .price-unit-sub {
+    font-size: 11px;
+    color: #81766d;
+    font-weight: 500;
+}
+
+/* Dark Mode Discount Badges & Prices */
+[data-theme="dark"] .fashion-storefront .card-discount-tag,
+[data-theme="dark"].fashion-storefront .card-discount-tag {
+    background: #e11d48;
+    box-shadow: 0 4px 12px rgba(225, 29, 72, 0.45);
+}
+
+[data-theme="dark"] .fashion-storefront .price-current,
+[data-theme="dark"].fashion-storefront .price-current {
+    color: #f87171;
+}
+
+[data-theme="dark"] .fashion-storefront .price-original,
+[data-theme="dark"].fashion-storefront .price-original {
+    color: #8b95a5;
+}
+
+[data-theme="dark"] .fashion-storefront .price-discount-tag,
+[data-theme="dark"].fashion-storefront .price-discount-tag {
+    background: rgba(225, 29, 72, 0.22);
+    color: #fca5a5;
+}

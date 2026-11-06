@@ -1,4 +1,6 @@
 <?php
+declare(strict_types=1);
+
 require_once __DIR__ . '/../api/admin-auth.php';
 require_once __DIR__ . '/primary-navigation.php';
 
@@ -16,6 +18,7 @@ $loginError = '';
 $csrfValid = adminCsrfValid();
 $csrfToken = adminCsrfToken();
 
+// Handle Login
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'login') {
     if (!$csrfValid) {
         $loginError = 'The sign-in form expired. Please try again.';
@@ -30,15 +33,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'login') {
             adminReleaseLoginLocks($conn, $loginLocks);
             $loginError = 'Too many sign-in attempts. Please wait 15 minutes and try again.';
         } else {
-            $stmt = $conn->prepare('SELECT id, username, password, role, permissions, is_active FROM admins WHERE username = ? LIMIT 1');
+            $stmt = $conn->prepare('SELECT id, username, password, role, permissions, is_active FROM admins WHERE username = ? OR (email IS NOT NULL AND email = ?) LIMIT 1');
             if (!$stmt) {
-                error_log('Could not prepare admin login lookup: ' . $conn->error);
                 http_response_code(500);
                 exit('Admin sign-in is temporarily unavailable.');
             }
-            $stmt->bind_param('s', $username);
+            $stmt->bind_param('ss', $username, $username);
             if (!$stmt->execute()) {
-                error_log('Could not execute admin login lookup: ' . $stmt->error);
                 $stmt->close();
                 http_response_code(500);
                 exit('Admin sign-in is temporarily unavailable.');
@@ -49,10 +50,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'login') {
             $storedHash = is_array($admin) ? (string) $admin['password'] : '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2uheWG/igi.';
             $passwordValid = is_string($password) && password_verify($password, $storedHash);
             if ($admin && (int) $admin['is_active'] === 1 && $passwordValid) {
-            session_regenerate_id(true);
-            $_SESSION['admin_id'] = (int) $admin['id'];
-            $_SESSION['admin_username'] = (string) $admin['username'];
-            $_SESSION['admin_csrf_token'] = bin2hex(random_bytes(32));
+                session_regenerate_id(true);
+                $_SESSION['admin_id'] = (int) $admin['id'];
+                $_SESSION['admin_username'] = (string) $admin['username'];
+                $_SESSION['admin_csrf_token'] = bin2hex(random_bytes(32));
                 if (!adminRegisterSession($conn, (int) $admin['id'])) {
                     unset($_SESSION['admin_id'], $_SESSION['admin_username'], $_SESSION['admin_csrf_token']);
                     adminReleaseLoginLocks($conn, $loginLocks);
@@ -73,6 +74,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'login') {
     }
 }
 
+// Handle Logout
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'logout' && $csrfValid) {
     adminDestroySession($conn);
     header('Location: index.php');
@@ -83,43 +85,44 @@ $currentAdmin = adminCurrentUser($conn);
 if ($currentAdmin === null) {
     ?>
     <!DOCTYPE html>
-    <html lang="en">
+    <html lang="km">
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Admin Sign In</title>
+        <title>Admin Sign In • 4K STORE</title>
         <link rel="stylesheet" href="../home/page.css">
-        <link rel="stylesheet" href="../home/fashion-theme.css?v=<?php echo filemtime(__DIR__ . '/../home/fashion-theme.css'); ?>">
-        <script src="../js/page-navigation.js?v=<?php echo filemtime(__DIR__ . '/../js/page-navigation.js'); ?>" defer></script>
+        <link rel="stylesheet" href="../home/fashion-theme.css?v=<?= filemtime(__DIR__ . '/../home/fashion-theme.css'); ?>">
+        <link rel="stylesheet" href="./backoffice-theme.css?v=<?= filemtime(__DIR__ . '/backoffice-theme.css'); ?>">
+        <link rel="stylesheet" href="../css/theme-mode.css?v=<?= filemtime(__DIR__ . '/../css/theme-mode.css'); ?>">
         <style>
-            .admin-login-wrap { min-height: 100vh; display: grid; place-items: center; padding: 24px; }
-            .admin-login-card { width: min(100%, 420px); padding: 34px; border: 1px solid rgba(0,242,254,.35); border-radius: 24px; background: rgba(10,16,32,.92); color: #fff; }
-            .admin-login-card h1 { margin: 0 0 8px; }
-            .admin-login-card p { color: rgba(255,255,255,.7); }
-            .admin-login-card label { display: block; margin: 18px 0 7px; }
-            .admin-login-card input { box-sizing: border-box; width: 100%; padding: 12px; border: 1px solid rgba(0,242,254,.3); border-radius: 10px; background: rgba(255,255,255,.08); color: #fff; font: inherit; }
-            .admin-login-card button { width: 100%; margin-top: 22px; padding: 12px; border: 0; border-radius: 10px; background: #00d9ee; color: #07111e; font: inherit; font-weight: 700; cursor: pointer; }
-            .admin-login-error { margin-top: 16px; color: #ff8b9b; }
+            .admin-login-wrap { min-height: 100vh; display: grid; place-items: center; padding: 24px; background: #f7f4ef; }
+            .admin-login-card { width: min(100%, 420px); padding: 40px 32px; border: 1px solid #e8e1d8; border-radius: 16px; background: #fff; box-shadow: 0 10px 35px rgba(0,0,0,0.06); color: #302923; }
+            .admin-login-card h1 { margin: 0 0 8px; font-size: 24px; font-weight: 700; color: #203f3a; }
+            .admin-login-card p { color: #756d64; font-size: 14px; margin-bottom: 22px; }
+            .admin-login-card label { display: block; margin: 16px 0 6px; font-size: 13px; font-weight: 600; color: #443e38; }
+            .admin-login-card input { box-sizing: border-box; width: 100%; padding: 12px 14px; border: 1px solid #ded5cb; border-radius: 8px; background: #faf8f5; color: #302923; font: inherit; outline: none; }
+            .admin-login-card input:focus { border-color: #203f3a; background: #fff; }
+            .admin-login-card button { width: 100%; margin-top: 24px; padding: 13px; border: 0; border-radius: 8px; background: #203f3a; color: #fff; font: inherit; font-weight: 700; cursor: pointer; transition: background 0.2s; }
+            .admin-login-card button:hover { background: #2f5650; }
+            .admin-login-error { margin-bottom: 16px; padding: 10px 14px; border-radius: 8px; background: #fde8e8; border: 1px solid #f8b4b4; color: #9b1c1c; font-size: 13px; }
         </style>
-        <link rel="stylesheet" href="./backoffice-theme.css?v=<?php echo filemtime(__DIR__ . '/backoffice-theme.css'); ?>">
-        <link rel="stylesheet" href="../css/theme-mode.css?v=<?php echo filemtime(__DIR__ . '/../css/theme-mode.css'); ?>">
     </head>
     <body class="fashion-storefront admin-storefront">
         <main class="admin-login-wrap">
             <form class="admin-login-card" method="post" action="index.php">
-                <h1>Admin sign in</h1>
-                <p>Sign in to view private customer orders and manage products.</p>
+                <h1>4K STORE • Admin</h1>
+                <p>ចូលប្រើប្រព័ន្ធគ្រប់គ្រងផលិតផល និងការបញ្ជាទិញ</p>
                 <?php if ($loginError !== ''): ?><div class="admin-login-error"><?= htmlspecialchars($loginError, ENT_QUOTES, 'UTF-8') ?></div><?php endif; ?>
                 <input type="hidden" name="action" value="login">
                 <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
-                <label for="adminUsername">Username</label>
-                <input id="adminUsername" name="username" type="text" autocomplete="username" required>
-                <label for="adminPassword">Password</label>
+                <label for="adminUsername">ឈ្មោះអ្នកប្រើប្រាស់ (Username ឬ Email)</label>
+                <input id="adminUsername" name="username" type="text" autocomplete="username" placeholder="kakadachan541@gmail.com ឬ netsmos100" required>
+                <label for="adminPassword">ពាក្យសម្ងាត់ (Password)</label>
                 <input id="adminPassword" name="password" type="password" autocomplete="current-password" required>
-                <button type="submit">Sign in</button>
+                <button type="submit">ចូលប្រព័ន្ធ (Sign in)</button>
             </form>
         </main>
-        <script src="../js/theme-mode.js?v=<?php echo filemtime(__DIR__ . '/../js/theme-mode.js'); ?>"></script>
+        <script src="../js/theme-mode.js?v=<?= filemtime(__DIR__ . '/../js/theme-mode.js'); ?>"></script>
     </body>
     </html>
     <?php
@@ -128,74 +131,26 @@ if ($currentAdmin === null) {
 
 $adminUsername = (string) $currentAdmin['username'];
 if (!adminHasPermission($currentAdmin, 'products')) {
-    if (adminHasPermission($currentAdmin, 'security')) {
-        header('Location: security.php');
-        exit;
-    }
-    foreach (['orders', 'inventory', 'customers', 'reports'] as $permission) {
-        if (adminHasPermission($currentAdmin, $permission)) {
-            header('Location: operations.php?view=' . rawurlencode($permission));
-            exit;
-        }
-    }
-    if (adminHasPermission($currentAdmin, 'support')) {
-        header('Location: ../customer-service/dashboard.php');
-        exit;
-    }
     http_response_code(403);
-    exit('You do not have permission to access the admin dashboard.');
+    exit('You do not have permission to access the product dashboard.');
 }
+
 header('Cache-Control: no-store, private');
-if (!in_array($action, ['list', 'add', 'edit', 'delete'], true)) {
-    $action = 'list';
+
+if (!ensureProductStockColumn($conn) || !ensureProductDiscountColumns($conn) || !ensureSalesAnalyticsSchema($conn) || !ensureAdminOperationsSchema($conn) || !ensureStoreManagementSchema($conn)) {
+    http_response_code(500);
+    exit('Could not prepare admin schemas.');
 }
 
-if (!ensureProductStockColumn($conn)) {
-    http_response_code(500);
-    exit('Could not prepare the product stock schema. Check the server error log.');
-}
-if (!ensureSalesAnalyticsSchema($conn)) {
-    http_response_code(500);
-    exit('Could not prepare the sales analytics schema. Check the server error log.');
-}
-if (!ensureAdminOperationsSchema($conn) || !ensureStoreManagementSchema($conn)) {
-    http_response_code(500);
-    exit('Could not prepare admin operations. Check the server error log.');
-}
-$currencySymbol = storeCurrencySymbol($conn);
-
-$error_msg = '';
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && in_array($action, ['add', 'edit', 'delete'], true) && !$csrfValid) {
-    $error_msg = 'The form expired. Please reload and try again.';
-}
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'logout' && !$csrfValid) {
-    $error_msg = 'The sign-out form expired. Please reload and try again.';
-    $action = 'list';
-}
-$product = null;
-$id = filter_var($_POST['id'] ?? $_GET['id'] ?? null, FILTER_VALIDATE_INT);
-
+// Helper functions for activity & inventory
 function saveProductActivity(mysqli $connection, ?int $productId, string $productName, string $action, string $actor, ?array $oldValues, ?array $newValues): bool
 {
     $statement = $connection->prepare('INSERT INTO product_activity (product_id, product_name, action, actor, old_values, new_values) VALUES (?, ?, ?, ?, ?, ?)');
-    if (!$statement) {
-        error_log('Could not prepare product activity log: ' . $connection->error);
-        return false;
-    }
-
+    if (!$statement) return false;
     $oldJson = $oldValues === null ? null : json_encode($oldValues, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     $newJson = $newValues === null ? null : json_encode($newValues, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-    if (($oldValues !== null && $oldJson === false) || ($newValues !== null && $newJson === false)) {
-        $statement->close();
-        error_log('Could not encode product activity details.');
-        return false;
-    }
-
     $statement->bind_param('isssss', $productId, $productName, $action, $actor, $oldJson, $newJson);
     $saved = $statement->execute();
-    if (!$saved) {
-        error_log('Could not save product activity log: ' . $statement->error);
-    }
     $statement->close();
     return $saved;
 }
@@ -204,6 +159,7 @@ function productActivitySnapshot(array $product): array
 {
     return [
         'name' => (string) $product['name'],
+        'category' => (string) ($product['category'] ?? ''),
         'description' => hash('sha256', (string) ($product['description'] ?? '')),
         'price' => $product['price'] === null ? null : (float) $product['price'],
         'cost_price' => $product['cost_price'] === null ? null : (float) $product['cost_price'],
@@ -212,337 +168,365 @@ function productActivitySnapshot(array $product): array
     ];
 }
 
-if ($action === 'edit' || $action === 'delete') {
-    if (!$id || $id < 1) {
-        header('Location: index.php');
+// -------------------------------------------------------------
+// AJAX ENDPOINT: Get Product JSON for Modal Editing
+// -------------------------------------------------------------
+if ($action === 'get_product_json') {
+    header('Content-Type: application/json; charset=utf-8');
+    $pId = filter_var($_GET['id'] ?? null, FILTER_VALIDATE_INT);
+    if (!$pId || $pId < 1) {
+        echo json_encode(['success' => false, 'message' => 'Invalid product ID']);
         exit;
     }
-
-    $stmt = $conn->prepare('SELECT * FROM products WHERE id = ?');
-    $stmt->bind_param('i', $id);
+    $stmt = $conn->prepare("SELECT id, name, category, description, price, original_price, discount_percent, cost_price, image, stock, low_stock_threshold FROM products WHERE id = ?");
+    $stmt->bind_param("i", $pId);
     $stmt->execute();
-    $product = $stmt->get_result()->fetch_assoc();
+    $prod = $stmt->get_result()->fetch_assoc();
     $stmt->close();
-
-    if (!$product) {
-        header('Location: index.php');
+    if (!$prod) {
+        echo json_encode(['success' => false, 'message' => 'Product not found']);
         exit;
     }
+    echo json_encode(['success' => true, 'product' => $prod]);
+    exit;
 }
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'delete' && $csrfValid) {
+// -------------------------------------------------------------
+// AJAX ENDPOINT: Quick Inline Stock Adjust (+1, -1, or Custom)
+// -------------------------------------------------------------
+if ($action === 'quick_stock_adjust' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    header('Content-Type: application/json; charset=utf-8');
+    if (!$csrfValid) {
+        echo json_encode(['success' => false, 'message' => 'Security token expired. Please refresh.']);
+        exit;
+    }
+    $pId = filter_var($_POST['id'] ?? null, FILTER_VALIDATE_INT);
+    $change = filter_var($_POST['delta'] ?? null, FILTER_VALIDATE_INT);
+    $exactStock = filter_var($_POST['new_stock'] ?? null, FILTER_VALIDATE_INT);
+    $reason = trim((string)($_POST['reason'] ?? 'Quick stock update from admin panel'));
+
+    if (!$pId || $pId < 1) {
+        echo json_encode(['success' => false, 'message' => 'Invalid product ID']);
+        exit;
+    }
+
     $conn->begin_transaction();
-    $stmt = $conn->prepare('DELETE FROM products WHERE id = ?');
-    if (!$stmt) {
-        $conn->rollback();
-        http_response_code(500);
-        exit('Could not prepare product deletion: ' . htmlspecialchars($conn->error, ENT_QUOTES, 'UTF-8'));
-    }
-    $stmt->bind_param('i', $id);
+    $stmt = $conn->prepare("SELECT id, name, stock, low_stock_threshold FROM products WHERE id = ? FOR UPDATE");
+    $stmt->bind_param("i", $pId);
+    $stmt->execute();
+    $pRow = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
 
-    $deleteSucceeded = $stmt->execute();
-    $activitySucceeded = $deleteSucceeded && saveProductActivity($conn, (int) $id, (string) $product['name'], 'delete', $adminUsername, productActivitySnapshot($product), null);
-    $transactionCommitted = $activitySucceeded && $conn->commit();
-    if ($transactionCommitted) {
-        $stmt->close();
-        header('Location: index.php');
+    if (!$pRow) {
+        $conn->rollback();
+        echo json_encode(['success' => false, 'message' => 'Product not found']);
         exit;
     }
 
-    $error_msg = $deleteSucceeded
-        ? 'The product could not be deleted because its activity record could not be saved.'
-        : 'Error deleting product: ' . $stmt->error;
-    $conn->rollback();
-    $stmt->close();
+    $stockBefore = (int)$pRow['stock'];
+    if ($exactStock !== null && $exactStock !== false) {
+        $stockAfter = max(0, $exactStock);
+    } elseif ($change !== null && $change !== false) {
+        $stockAfter = max(0, $stockBefore + $change);
+    } else {
+        $conn->rollback();
+        echo json_encode(['success' => false, 'message' => 'No stock adjustment provided']);
+        exit;
+    }
+
+    $stockDelta = $stockAfter - $stockBefore;
+    $upd = $conn->prepare("UPDATE products SET stock = ? WHERE id = ?");
+    $upd->bind_param("ii", $stockAfter, $pId);
+    $upd->execute();
+    $upd->close();
+
+    recordInventoryAdjustment(
+        $conn,
+        $pId,
+        (string)$pRow['name'],
+        $stockDelta,
+        $stockBefore,
+        $stockAfter,
+        $reason,
+        $adminUsername
+    );
+
+    $conn->commit();
+
+    $threshold = (int)$pRow['low_stock_threshold'];
+    $stockStatus = $stockAfter === 0 ? 'empty' : ($stockAfter <= $threshold ? 'low' : 'ok');
+
+    echo json_encode([
+        'success' => true,
+        'product_id' => $pId,
+        'stock_before' => $stockBefore,
+        'stock_after' => $stockAfter,
+        'stock_status' => $stockStatus,
+        'message' => "ស្តុកផលិតផល {$pRow['name']} ត្រូវបានប្តូរទៅជា {$stockAfter}"
+    ]);
+    exit;
 }
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($action === 'add' || $action === 'edit') && $csrfValid) {
-    $nameInput = $_POST['name'] ?? '';
-    $descriptionInput = $_POST['description'] ?? '';
-    $name = is_string($nameInput) ? trim($nameInput) : '';
-    $description = is_string($descriptionInput) ? trim($descriptionInput) : '';
-    $priceInput = is_string($_POST['price'] ?? null) ? $_POST['price'] : '';
-    $costPriceInput = is_string($_POST['cost_price'] ?? null) ? $_POST['cost_price'] : '';
-    $stockInput = is_string($_POST['stock'] ?? null) ? $_POST['stock'] : '';
-    $stockDigits = is_string($stockInput) && preg_match('/^\d+$/D', $stockInput) ? ltrim($stockInput, '0') : false;
-    $stock = $stockDigits === false
-        ? false
-        : filter_var($stockDigits === '' ? '0' : $stockDigits, FILTER_VALIDATE_INT, ['options' => ['min_range' => 0, 'max_range' => 2147483647]]);
+// -------------------------------------------------------------
+// POST HANDLER: Add or Edit Product (AJAX or Standard POST)
+// -------------------------------------------------------------
+$error_msg = '';
+$flash_msg = '';
 
-    $moneyPattern = '/^\d{1,8}(?:\.\d{1,2})?$/D';
-    $priceValid = preg_match($moneyPattern, $priceInput) === 1 && is_finite((float) $priceInput) && (float) $priceInput <= 99999999.99;
-    $costPrice = null;
-    $costPriceValid = is_string($costPriceInput) && trim($costPriceInput) === '';
-    if (trim($costPriceInput) !== '' && preg_match($moneyPattern, $costPriceInput) === 1 && is_finite((float) $costPriceInput) && (float) $costPriceInput <= 99999999.99) {
-        $costPrice = (float) $costPriceInput;
-        $costPriceValid = true;
-    }
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($action === 'add' || $action === 'edit')) {
+    $isAjax = isset($_POST['is_ajax']) && $_POST['is_ajax'] === '1';
+    
+    if (!$csrfValid) {
+        $error_msg = 'The form session expired. Please reload and try again.';
+        if ($isAjax) {
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode(['success' => false, 'message' => $error_msg]);
+            exit;
+        }
+    } else {
+        $pId = filter_var($_POST['id'] ?? null, FILTER_VALIDATE_INT);
+        $name = trim((string)($_POST['name'] ?? ''));
+        $category = trim((string)($_POST['category'] ?? 'men'));
+        $description = trim((string)($_POST['description'] ?? ''));
+        $priceInput = trim((string)($_POST['price'] ?? '0'));
+        $originalPriceInput = trim((string)($_POST['original_price'] ?? ''));
+        $discountPercentInput = trim((string)($_POST['discount_percent'] ?? '0'));
+        $costPriceInput = trim((string)($_POST['cost_price'] ?? ''));
+        $stockInput = trim((string)($_POST['stock'] ?? '0'));
+        $thresholdInput = trim((string)($_POST['low_stock_threshold'] ?? '5'));
 
-    if ($name === '' || $description === '' || !$priceValid || !$costPriceValid || $stock === false) {
-        $error_msg = 'Please provide a name, description, valid non-negative price and cost, and whole-number stock amount.';
-    }
+        $price = is_numeric($priceInput) ? max(0, (float)$priceInput) : false;
+        $originalPrice = ($originalPriceInput !== '' && is_numeric($originalPriceInput)) ? max(0, (float)$originalPriceInput) : null;
+        $discountPercent = is_numeric($discountPercentInput) ? max(0, min(99, (int)$discountPercentInput)) : 0;
+        $costPrice = ($costPriceInput !== '' && is_numeric($costPriceInput)) ? max(0, (float)$costPriceInput) : null;
+        $stock = is_numeric($stockInput) ? max(0, (int)$stockInput) : 0;
+        $threshold = is_numeric($thresholdInput) ? max(1, (int)$thresholdInput) : 5;
 
-    $imagePath = $action === 'edit' ? $product['image'] : '';
-    $uploadedImagePath = '';
-    $imageChanged = false;
-    $imageSource = $_POST['image_source'] ?? 'upload';
-    $imageUrlInput = $_POST['image_url'] ?? '';
-    $imageUrl = is_string($imageUrlInput) ? trim($imageUrlInput) : '';
-    $upload = $_FILES['icon'] ?? null;
-
-    if (!in_array($imageSource, ['upload', 'url'], true)) {
-        $error_msg = 'Please choose an image upload method.';
-    }
-
-    if ($error_msg === '' && $imageSource === 'url' && !is_string($imageUrlInput)) {
-        $error_msg = 'Please provide a valid HTTP(S) image URL no longer than 255 characters.';
-    }
-
-    if ($error_msg === '' && $imageSource === 'url' && $imageUrl !== '') {
-        if (strlen($imageUrl) > 255 || filter_var($imageUrl, FILTER_VALIDATE_URL) === false) {
-            $error_msg = 'Please provide a valid HTTP(S) image URL no longer than 255 characters.';
-        } else {
-            $urlParts = parse_url($imageUrl);
-            $urlScheme = is_array($urlParts) ? strtolower($urlParts['scheme'] ?? '') : '';
-            if (
-                !in_array($urlScheme, ['http', 'https'], true)
-                || empty($urlParts['host'])
-                || isset($urlParts['user'])
-                || isset($urlParts['pass'])
-            ) {
-                $error_msg = 'Please provide a valid HTTP(S) image URL no longer than 255 characters.';
+        // Auto-calculate discount relationship
+        if ($price !== false && $price > 0) {
+            if ($originalPrice !== null && $originalPrice > $price) {
+                $discountPercent = (int) round((($originalPrice - $price) / $originalPrice) * 100);
+            } elseif ($discountPercent > 0 && ($originalPrice === null || $originalPrice <= $price)) {
+                $originalPrice = round($price / (1 - ($discountPercent / 100)), 2);
             } else {
+                $originalPrice = null;
+                $discountPercent = 0;
+            }
+        } else {
+            $originalPrice = null;
+            $discountPercent = 0;
+        }
+
+        if ($name === '' || $price === false) {
+            $error_msg = 'សូមបញ្ចូលឈ្មោះ និងតម្លៃផលិតផលឱ្យបានត្រឹមត្រូវ (Name and price required).';
+        }
+
+        // Handle Image
+        $imagePath = '';
+        if ($action === 'edit' && $pId) {
+            $cStmt = $conn->prepare("SELECT image FROM products WHERE id = ?");
+            $cStmt->bind_param("i", $pId);
+            $cStmt->execute();
+            $oldP = $cStmt->get_result()->fetch_assoc();
+            $cStmt->close();
+            $imagePath = $oldP ? (string)$oldP['image'] : '';
+        }
+
+        $imageSource = $_POST['image_source'] ?? 'url';
+        $imageUrl = trim((string)($_POST['image_url'] ?? ''));
+        $upload = $_FILES['icon'] ?? null;
+
+        if ($error_msg === '') {
+            if ($imageSource === 'url' && $imageUrl !== '') {
                 $imagePath = $imageUrl;
-                $imageChanged = true;
-            }
-        }
-    } elseif ($error_msg === '' && $imageSource === 'url' && $action === 'add') {
-        $error_msg = 'Please provide an image URL.';
-    } elseif ($error_msg === '' && $imageSource === 'upload' && $upload && $upload['error'] !== UPLOAD_ERR_NO_FILE) {
-        if ($upload['error'] !== UPLOAD_ERR_OK || !is_uploaded_file($upload['tmp_name'])) {
-            $error_msg = 'Failed to upload icon.';
-        } else {
-            $imageTypes = [
-                'image/jpeg' => 'jpg',
-                'image/png' => 'png',
-                'image/gif' => 'gif',
-                'image/webp' => 'webp',
-            ];
-            $fileType = mime_content_type($upload['tmp_name']);
-
-            if (!isset($imageTypes[$fileType])) {
-                $error_msg = 'Invalid file type. Only JPG, PNG, GIF, or WEBP allowed.';
-            } else {
-                $targetDirectory = __DIR__ . '/../img/products/';
-                if (!is_dir($targetDirectory) && !mkdir($targetDirectory, 0755, true) && !is_dir($targetDirectory)) {
-                    $error_msg = 'Failed to create the product image directory.';
-                } else {
-                    $imageName = 'icon_' . bin2hex(random_bytes(16)) . '.' . $imageTypes[$fileType];
-                    $targetPath = $targetDirectory . $imageName;
-
-                    if (!move_uploaded_file($upload['tmp_name'], $targetPath)) {
-                        $error_msg = 'Failed to upload icon.';
-                    } else {
-                        $uploadedImagePath = 'img/products/' . $imageName;
-                        $imagePath = $uploadedImagePath;
-                        $imageChanged = true;
+            } elseif ($imageSource === 'upload' && $upload && $upload['error'] === UPLOAD_ERR_OK && is_uploaded_file($upload['tmp_name'])) {
+                $fileType = mime_content_type($upload['tmp_name']);
+                $imageTypes = [
+                    'image/jpeg' => 'jpg',
+                    'image/png' => 'png',
+                    'image/gif' => 'gif',
+                    'image/webp' => 'webp',
+                ];
+                if (isset($imageTypes[$fileType])) {
+                    $targetDir = __DIR__ . '/../img/products/';
+                    if (!is_dir($targetDir)) mkdir($targetDir, 0755, true);
+                    $newImgName = 'icon_' . bin2hex(random_bytes(14)) . '.' . $imageTypes[$fileType];
+                    if (move_uploaded_file($upload['tmp_name'], $targetDir . $newImgName)) {
+                        $imagePath = 'img/products/' . $newImgName;
                     }
                 }
-            }
-        }
-    } elseif ($error_msg === '' && $imageSource === 'upload' && $action === 'add') {
-        $error_msg = 'Please select a product icon.';
-    }
-
-    if ($error_msg === '') {
-        $price = (float) $priceInput;
-        $conn->begin_transaction();
-        if ($action === 'add') {
-            $stmt = $conn->prepare('INSERT INTO products (name, description, price, cost_price, image, stock) VALUES (?, ?, ?, ?, ?, ?)');
-            if ($stmt) {
-                $stmt->bind_param('ssddsi', $name, $description, $price, $costPrice, $imagePath, $stock);
-            }
-        } else {
-            $stmt = $conn->prepare('UPDATE products SET name = ?, description = ?, price = ?, cost_price = ?, image = ?, stock = ? WHERE id = ?');
-            if ($stmt) {
-                $stmt->bind_param('ssddsii', $name, $description, $price, $costPrice, $imagePath, $stock, $id);
-            }
-        }
-
-        if ($stmt && $stmt->execute()) {
-            $savedId = $action === 'add' ? (int) $conn->insert_id : (int) $id;
-            $newValues = [
-                'name' => $name,
-                'description' => hash('sha256', $description),
-                'price' => $price,
-                'cost_price' => $costPrice,
-                'stock' => $stock,
-                'image' => $imagePath,
-            ];
-            $oldValues = $action === 'edit' ? productActivitySnapshot($product) : null;
-            $activitySaved = saveProductActivity(
-                $conn,
-                $savedId,
-                $name,
-                $action,
-                $adminUsername,
-                $oldValues,
-                $newValues
-            );
-            $stockBefore = $action === 'edit' ? (int) $product['stock'] : 0;
-            $stockChange = $stock - $stockBefore;
-            $stockLogged = $stockChange === 0 || recordInventoryAdjustment(
-                $conn,
-                $savedId,
-                $name,
-                $stockChange,
-                $stockBefore,
-                $stock,
-                $action === 'add' ? 'Initial stock from product form' : 'Stock changed in product form',
-                $adminUsername
-            );
-            $lowStockThreshold = $action === 'edit' ? (int) $product['low_stock_threshold'] : 5;
-            $lowStockCrossed = ($action === 'add' && $stock <= $lowStockThreshold)
-                || ($action === 'edit' && $stockBefore > $lowStockThreshold && $stock <= $lowStockThreshold);
-            $notificationSaved = !$lowStockCrossed || createAdminNotification(
-                $conn,
-                'low_stock',
-                'Low stock: ' . $name,
-                'Stock is now ' . $stock . ' unit(s), at or below its alert threshold.',
-                'operations.php?view=inventory'
-            );
-            if (!$activitySaved || !$stockLogged || !$notificationSaved || !$conn->commit()) {
-                $conn->rollback();
-                $error_msg = 'Product and its activity record could not be saved.';
-                if ($stmt) {
-                    $stmt->close();
-                }
-            } else {
-                $stmt->close();
-
-                if ($action === 'edit' && $imageChanged && !empty($product['image'])) {
-                    $oldImage = $product['image'];
-                    if ($oldImage === 'img/products/' . basename($oldImage)) {
-                        $oldImagePath = __DIR__ . '/../' . $oldImage;
-                        if (is_file($oldImagePath)) {
-                            unlink($oldImagePath);
-                        }
-                    }
-                }
-
-                header('Location: index.php');
-                exit;
             }
         }
 
         if ($error_msg === '') {
-            $error_msg = 'Error saving product: ' . ($stmt ? $stmt->error : $conn->error);
-            if ($stmt) {
-                $stmt->close();
+            $conn->begin_transaction();
+            if ($action === 'add') {
+                $stmt = $conn->prepare("INSERT INTO products (name, category, description, price, original_price, discount_percent, cost_price, image, stock, low_stock_threshold) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                $stmt->bind_param("sssddidsii", $name, $category, $description, $price, $originalPrice, $discountPercent, $costPrice, $imagePath, $stock, $threshold);
+                if ($stmt->execute()) {
+                    $newId = (int)$conn->insert_id;
+                    $stmt->close();
+                    recordInventoryAdjustment($conn, $newId, $name, $stock, 0, $stock, 'Initial stock on creation', $adminUsername);
+                    saveProductActivity($conn, $newId, $name, 'create', $adminUsername, null, [
+                        'name' => $name, 'category' => $category, 'price' => $price, 'original_price' => $originalPrice, 'discount_percent' => $discountPercent, 'stock' => $stock
+                    ]);
+                    $conn->commit();
+                    $flash_msg = "ផលិតផល \"{$name}\" ត្រូវបានបន្ថែមជោគជ័យ!";
+                    if ($isAjax) {
+                        header('Content-Type: application/json; charset=utf-8');
+                        echo json_encode(['success' => true, 'message' => $flash_msg, 'id' => $newId]);
+                        exit;
+                    }
+                    header('Location: index.php?view=products&msg=added');
+                    exit;
+                } else {
+                    $conn->rollback();
+                    $error_msg = 'Error creating product: ' . $conn->error;
+                }
+            } else { // edit
+                $stmt = $conn->prepare("UPDATE products SET name = ?, category = ?, description = ?, price = ?, original_price = ?, discount_percent = ?, cost_price = ?, image = ?, stock = ?, low_stock_threshold = ? WHERE id = ?");
+                $stmt->bind_param("sssddidsiii", $name, $category, $description, $price, $originalPrice, $discountPercent, $costPrice, $imagePath, $stock, $threshold, $pId);
+                if ($stmt->execute()) {
+                    $stmt->close();
+                    saveProductActivity($conn, $pId, $name, 'update', $adminUsername, null, [
+                        'name' => $name, 'category' => $category, 'price' => $price, 'original_price' => $originalPrice, 'discount_percent' => $discountPercent, 'stock' => $stock
+                    ]);
+                    $conn->commit();
+                    $flash_msg = "បានកែប្រែផលិតផល \"{$name}\" ជោគជ័យ!";
+                    if ($isAjax) {
+                        header('Content-Type: application/json; charset=utf-8');
+                        echo json_encode(['success' => true, 'message' => $flash_msg]);
+                        exit;
+                    }
+                    header('Location: index.php?view=products&msg=updated');
+                    exit;
+                } else {
+                    $conn->rollback();
+                    $error_msg = 'Error updating product: ' . $conn->error;
+                }
             }
-            $conn->rollback();
         }
-        if ($uploadedImagePath !== '') {
-            unlink(__DIR__ . '/../' . $uploadedImagePath);
-        }
-    }
 
-    if ($action === 'edit') {
-        $product['name'] = $name;
-        $product['description'] = $description;
-        $product['price'] = $priceInput;
-        $product['cost_price'] = $costPriceInput;
-        $product['stock'] = $stockInput;
-        $product['image'] = $uploadedImagePath !== '' ? ($product['image'] ?? '') : $imagePath;
+        if ($isAjax && $error_msg !== '') {
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode(['success' => false, 'message' => $error_msg]);
+            exit;
+        }
     }
 }
 
-$formName = is_string($_POST['name'] ?? null) ? $_POST['name'] : (string) ($product['name'] ?? '');
-$formDescription = is_string($_POST['description'] ?? null) ? $_POST['description'] : (string) ($product['description'] ?? '');
-$formPrice = is_string($_POST['price'] ?? null) ? $_POST['price'] : (string) ($product['price'] ?? '');
-$formCostPrice = is_string($_POST['cost_price'] ?? null) ? $_POST['cost_price'] : (string) ($product['cost_price'] ?? '');
-$formStock = is_string($_POST['stock'] ?? null) ? $_POST['stock'] : (string) ($product['stock'] ?? '0');
-$formImageUrl = is_string($_POST['image_url'] ?? null) ? $_POST['image_url'] : '';
+// -------------------------------------------------------------
+// POST HANDLER: Delete Product
+// -------------------------------------------------------------
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'delete') {
+    $pId = filter_var($_POST['id'] ?? null, FILTER_VALIDATE_INT);
+    $isAjax = isset($_POST['is_ajax']) && $_POST['is_ajax'] === '1';
 
-$todayStart = new DateTimeImmutable('today', new DateTimeZone('Asia/Phnom_Penh'));
-$tomorrowStart = $todayStart->modify('+1 day');
-$yesterdayStart = $todayStart->modify('-1 day');
-$salesSummaryStatement = $conn->prepare("SELECT COALESCE(SUM(quantity), 0) AS units,
-    COALESCE(SUM(COALESCE(paid_amount, unit_price * quantity - discount_amount) - (SELECT COALESCE(SUM(h.amount), 0) FROM sales_order_history h WHERE h.order_id = sales_orders.id AND h.event_type = 'refund_recorded')), 0) AS revenue,
-    COALESCE(SUM(CASE WHEN unit_cost IS NOT NULL THEN COALESCE(paid_amount, unit_price * quantity - discount_amount) - (SELECT COALESCE(SUM(h.amount), 0) FROM sales_order_history h WHERE h.order_id = sales_orders.id AND h.event_type = 'refund_recorded') - unit_cost * quantity ELSE 0 END), 0) AS known_profit,
-    COALESCE(SUM(CASE WHEN unit_cost IS NULL THEN quantity ELSE 0 END), 0) AS unknown_cost_units
-    FROM sales_orders WHERE payment_status IN ('verified', 'partially_refunded', 'refunded') AND status <> 'Cancelled' AND created_at >= ? AND created_at < ?");
-if (!$salesSummaryStatement) {
-    http_response_code(500);
-    exit('Could not prepare the daily sales summary: ' . htmlspecialchars($conn->error, ENT_QUOTES, 'UTF-8'));
-}
-$todayFrom = $todayStart->format('Y-m-d H:i:s');
-$todayUntil = $tomorrowStart->format('Y-m-d H:i:s');
-$salesSummaryStatement->bind_param('ss', $todayFrom, $todayUntil);
-if (!$salesSummaryStatement->execute()) {
-    http_response_code(500);
-    exit('Could not load today\'s sales summary: ' . htmlspecialchars($salesSummaryStatement->error, ENT_QUOTES, 'UTF-8'));
-}
-$todaySales = $salesSummaryStatement->get_result()->fetch_assoc();
-$yesterdayFrom = $yesterdayStart->format('Y-m-d H:i:s');
-$yesterdayUntil = $todayStart->format('Y-m-d H:i:s');
-$salesSummaryStatement->bind_param('ss', $yesterdayFrom, $yesterdayUntil);
-if (!$salesSummaryStatement->execute()) {
-    http_response_code(500);
-    exit('Could not load yesterday\'s sales summary: ' . htmlspecialchars($salesSummaryStatement->error, ENT_QUOTES, 'UTF-8'));
-}
-$yesterdaySales = $salesSummaryStatement->get_result()->fetch_assoc();
-$salesSummaryStatement->close();
+    if (!$csrfValid) {
+        $error_msg = 'Session expired. Please try again.';
+    } elseif ($pId && $pId > 0) {
+        $stmt = $conn->prepare("SELECT name FROM products WHERE id = ?");
+        $stmt->bind_param("i", $pId);
+        $stmt->execute();
+        $pRow = $stmt->get_result()->fetch_assoc();
+        $stmt->close();
 
-$salesStatement = $conn->prepare('SELECT order_reference, payment_method, status, payment_status, customer_name, product_name, unit_price, quantity, coupon_code, discount_amount, location, phone_number, created_at FROM sales_orders ORDER BY created_at DESC, id DESC LIMIT 50');
-$activityStatement = $conn->prepare('SELECT product_id, product_name, action, actor, old_values, new_values, created_at FROM product_activity ORDER BY created_at DESC, id DESC LIMIT 50');
-if (!$salesStatement) {
-    error_log('Could not prepare sales history query: ' . $conn->error);
-    http_response_code(500);
-    exit('Could not prepare sales history: ' . htmlspecialchars($conn->error, ENT_QUOTES, 'UTF-8'));
-}
-if (!$activityStatement) {
-    error_log('Could not prepare product activity query: ' . $conn->error);
-    $salesStatement->close();
-    http_response_code(500);
-    exit('Could not prepare product activity: ' . htmlspecialchars($conn->error, ENT_QUOTES, 'UTF-8'));
-}
-if (!$salesStatement->execute()) {
-    $queryError = $salesStatement->error;
-    error_log('Could not execute sales history query: ' . $queryError);
-    $salesStatement->close();
-    $activityStatement->close();
-    http_response_code(500);
-    exit('Could not load sales history: ' . htmlspecialchars($queryError, ENT_QUOTES, 'UTF-8'));
-}
-$salesHistory = $salesStatement->get_result();
-if (!$salesHistory) {
-    error_log('Could not retrieve sales history result: ' . $salesStatement->error);
-    $salesStatement->close();
-    $activityStatement->close();
-    http_response_code(500);
-    exit('Could not retrieve sales history.');
-}
-if (!$activityStatement->execute()) {
-    $queryError = $activityStatement->error;
-    error_log('Could not execute product activity query: ' . $queryError);
-    $salesStatement->close();
-    $activityStatement->close();
-    http_response_code(500);
-    exit('Could not load product activity: ' . htmlspecialchars($queryError, ENT_QUOTES, 'UTF-8'));
-}
-$activityHistory = $activityStatement->get_result();
-$salesStatement->close();
-$activityStatement->close();
+        if ($pRow) {
+            $pName = (string)$pRow['name'];
+            $del = $conn->prepare("DELETE FROM products WHERE id = ?");
+            $del->bind_param("i", $pId);
+            if ($del->execute()) {
+                $del->close();
+                saveProductActivity($conn, $pId, $pName, 'delete', $adminUsername, ['name' => $pName], null);
+                $flash_msg = "បានលុបផលិតផល \"{$pName}\" រួចរាល់។";
+                if ($isAjax) {
+                    header('Content-Type: application/json; charset=utf-8');
+                    echo json_encode(['success' => true, 'message' => $flash_msg]);
+                    exit;
+                }
+                header('Location: index.php?view=products&msg=deleted');
+                exit;
+            }
+        }
+    }
 
-$result = $conn->query('SELECT * FROM products ORDER BY id DESC');
-$lowStockResult = $conn->query('SELECT name, stock, low_stock_threshold FROM products WHERE stock <= low_stock_threshold ORDER BY stock ASC, name ASC');
-$inventoryResult = $conn->query('SELECT COALESCE(SUM(stock), 0) AS units FROM products');
-if (!$result || !$lowStockResult || !$inventoryResult) {
-    http_response_code(500);
-    exit('Could not load product inventory: ' . htmlspecialchars($conn->error, ENT_QUOTES, 'UTF-8'));
+    if ($isAjax) {
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode(['success' => false, 'message' => $error_msg ?: 'Could not delete product']);
+        exit;
+    }
 }
-$inventoryUnits = (int) $inventoryResult->fetch_assoc()['units'];
+
+// Fetch KPI Statistics
+$statsQuery = $conn->query("SELECT 
+    count(*) as total_products,
+    COALESCE(SUM(stock), 0) as total_units,
+    COALESCE(SUM(price * stock), 0) as total_value,
+    COALESCE(SUM(CASE WHEN stock <= low_stock_threshold AND stock > 0 THEN 1 ELSE 0 END), 0) as low_stock_count,
+    COALESCE(SUM(CASE WHEN stock = 0 THEN 1 ELSE 0 END), 0) as out_of_stock_count
+FROM products");
+$kpiStats = $statsQuery ? $statsQuery->fetch_assoc() : [];
+
+$currencySymbol = storeCurrencySymbol($conn);
+
+// Fetch All Products for the Dashboard Matrix
+$productsList = [];
+$prodRes = $conn->query("SELECT id, name, category, description, price, original_price, discount_percent, cost_price, image, stock, low_stock_threshold, created_at FROM products ORDER BY id DESC");
+if ($prodRes) {
+    while ($r = $prodRes->fetch_assoc()) {
+        $productsList[] = $r;
+    }
+}
+
+// Category Distribution for filter pills
+$catCounts = ['all' => count($productsList), 'men' => 0, 'women' => 0, 'accessories' => 0, 'digital' => 0];
+foreach ($productsList as $p) {
+    $c = $p['category'] ?: 'men';
+    if (!isset($catCounts[$c])) $catCounts[$c] = 0;
+    $catCounts[$c]++;
+}
+
+$adminView = $_GET['view'] ?? 'dashboard';
+if (!in_array($adminView, ['dashboard', 'products'], true)) {
+    $adminView = 'dashboard';
+}
+
+// Fetch Overview Stats for Dashboard
+$ordersStatsQuery = $conn->query("SELECT 
+    COUNT(*) as total_orders,
+    COALESCE(SUM(CASE WHEN payment_status = 'verified' OR status IN ('Paid', 'Completed') THEN (quantity * unit_price) ELSE 0 END), 0) as total_revenue,
+    COALESCE(SUM(CASE WHEN status = 'Pending' OR payment_status = 'pending' THEN 1 ELSE 0 END), 0) as pending_orders,
+    COALESCE(SUM(CASE WHEN status IN ('Completed', 'Paid') THEN 1 ELSE 0 END), 0) as completed_orders
+FROM sales_orders");
+$orderStats = $ordersStatsQuery ? $ordersStatsQuery->fetch_assoc() : [];
+$dashTotalRevenue = (float)($orderStats['total_revenue'] ?? 0);
+$dashTotalOrders = (int)($orderStats['total_orders'] ?? 0);
+$dashPendingOrders = (int)($orderStats['pending_orders'] ?? 0);
+$dashCompletedOrders = (int)($orderStats['completed_orders'] ?? 0);
+
+$custCountQuery = $conn->query("SELECT COUNT(*) as total_customers FROM users");
+$dashTotalCustomers = $custCountQuery ? (int)($custCountQuery->fetch_assoc()['total_customers'] ?? 0) : 0;
+
+$recentOrdersQuery = $conn->query("SELECT id, order_reference, customer_name, phone_number, (quantity * unit_price) as total_amount, status, payment_status, created_at FROM sales_orders ORDER BY id DESC LIMIT 6");
+$recentOrdersList = [];
+if ($recentOrdersQuery) {
+    while ($ro = $recentOrdersQuery->fetch_assoc()) {
+        $recentOrdersList[] = $ro;
+    }
+}
+
+$lowStockProducts = [];
+$lowStockQuery = $conn->query("SELECT id, name, category, price, stock, low_stock_threshold, image FROM products WHERE stock <= low_stock_threshold OR stock = 0 ORDER BY stock ASC, id DESC LIMIT 6");
+if ($lowStockQuery) {
+    while ($lp = $lowStockQuery->fetch_assoc()) {
+        $lowStockProducts[] = $lp;
+    }
+}
+
+$adminStoreSettings = function_exists('getStoreSettings') ? getStoreSettings($conn) : [];
+$adminStoreName = $adminStoreSettings['store_name'] ?? 'SN STORE';
+$adminStoreLogo = $adminStoreSettings['store_logo_url'] ?? '';
+$adminResolvedLogo = function_exists('resolveStoreAssetUrl') ? resolveStoreAssetUrl($adminStoreLogo, 'admin') : '../' . ltrim($adminStoreLogo, './\\');
 ?>
 <!DOCTYPE html>
 <html lang="km">
@@ -550,1111 +534,2030 @@ $inventoryUnits = (int) $inventoryResult->fetch_assoc()['units'];
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard • 4K STORE</title>
+    <title><?= $adminView === 'dashboard' ? 'ផ្ទាំងគ្រប់គ្រងទូទៅ • Store Dashboard • ' . htmlspecialchars($adminStoreName, ENT_QUOTES, 'UTF-8') : 'គ្រប់គ្រងផលិតផល • Product Catalog • ' . htmlspecialchars($adminStoreName, ENT_QUOTES, 'UTF-8'); ?></title>
+    <!-- FontAwesome & Google Fonts -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="icon" href="../home/logo/logome.png" type="image/x-icon">
-    <link rel="stylesheet" href="../home/page.css?v=<?php echo filemtime(__DIR__ . '/../home/page.css'); ?>">
-    <link rel="stylesheet" href="../home/fashion-theme.css?v=<?php echo filemtime(__DIR__ . '/../home/fashion-theme.css'); ?>">
-    <script src="../js/page-navigation.js?v=<?php echo filemtime(__DIR__ . '/../js/page-navigation.js'); ?>" defer></script>
+    <link rel="icon" href="<?= htmlspecialchars($adminResolvedLogo, ENT_QUOTES, 'UTF-8') ?>" type="image/x-icon">
+    <link rel="apple-touch-icon" href="<?= htmlspecialchars($adminResolvedLogo, ENT_QUOTES, 'UTF-8') ?>">
+    <link rel="stylesheet" href="../home/page.css?v=<?= filemtime(__DIR__ . '/../home/page.css'); ?>">
+    <link rel="stylesheet" href="../home/fashion-theme.css?v=<?= filemtime(__DIR__ . '/../home/fashion-theme.css'); ?>">
+    <link rel="stylesheet" href="./backoffice-theme.css?v=<?= filemtime(__DIR__ . '/backoffice-theme.css'); ?>">
+    <link rel="stylesheet" href="../css/theme-mode.css?v=<?= filemtime(__DIR__ . '/../css/theme-mode.css'); ?>">
+    <script src="../js/page-navigation.js?v=<?= filemtime(__DIR__ . '/../js/page-navigation.js'); ?>" defer></script>
+    <script src="../js/theme-mode.js?v=<?= filemtime(__DIR__ . '/../js/theme-mode.js'); ?>" defer></script>
     <style>
-        .admin-dashboard-container {
-            max-width: 1140px;
-            margin: 40px auto 60px;
-            padding: 0 20px;
-            position: relative;
-            z-index: 10;
+        /* Modern Clean Dashboard Styling */
+        :root {
+            --admin-primary: #1e3a35;
+            --admin-primary-light: #2d564f;
+            --admin-accent: #b17b60;
+            --admin-bg: #f8f6f2;
+            --admin-card-bg: #ffffff;
+            --admin-border: #e6dfd5;
+            --admin-text-main: #2b2520;
+            --admin-text-muted: #736b63;
+            --admin-green: #2e7d32;
+            --admin-green-bg: #e8f5e9;
+            --admin-amber: #d97706;
+            --admin-amber-bg: #fef3c7;
+            --admin-red: #dc2626;
+            --admin-red-bg: #fee2e2;
+            --admin-radius: 12px;
+            --admin-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+            --admin-sidebar-w: 240px;
         }
 
-        .admin-header-glass {
-            background: linear-gradient(135deg, rgba(15, 23, 42, 0.88) 0%, rgba(30, 27, 75, 0.8) 50%, rgba(15, 23, 42, 0.92) 100%);
-            backdrop-filter: blur(28px) saturate(180%);
-            -webkit-backdrop-filter: blur(28px) saturate(180%);
-            border: 1px solid rgba(99, 102, 241, 0.35);
-            border-radius: 28px;
-            padding: 24px 30px;
-            margin-bottom: 24px;
+        /* Dark Theme Support */
+        body.admin-storefront[data-theme="dark"],
+        [data-theme="dark"] {
+            --admin-primary: #34d399;
+            --admin-primary-light: #10b981;
+            --admin-accent: #f59e0b;
+            --admin-bg: #0f141d;
+            --admin-card-bg: #161c27;
+            --admin-border: #293444;
+            --admin-text-main: #edf2f7;
+            --admin-text-muted: #94a3b8;
+            --admin-green: #4ade80;
+            --admin-green-bg: rgba(34, 197, 94, 0.15);
+            --admin-amber: #fbbf24;
+            --admin-amber-bg: rgba(245, 158, 11, 0.15);
+            --admin-red: #f87171;
+            --admin-red-bg: rgba(239, 68, 68, 0.15);
+            --admin-shadow: 0 4px 24px rgba(0, 0, 0, 0.28);
+        }
+
+        body.admin-storefront {
+            background-color: var(--admin-bg);
+            color: var(--admin-text-main);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Kantumruy Pro", sans-serif;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+        }
+
+        .dashboard-wrapper {
             display: flex;
-            align-items: center;
+            min-height: 100vh;
+            width: 100%;
+            background-color: var(--admin-bg);
+            box-sizing: border-box;
+            position: relative;
+        }
+
+        /* Content Area - Offset exactly by the fixed sidebar width */
+        .dashboard-main-pane {
+            flex: 1;
+            min-width: 0;
+            margin-left: var(--admin-sidebar-w);
+            width: calc(100% - var(--admin-sidebar-w));
+            max-width: calc(100% - var(--admin-sidebar-w));
+            padding: 28px 36px 80px;
+            box-sizing: border-box;
+            transition: margin-left 0.2s ease, width 0.2s ease;
+        }
+
+        @media (max-width: 760px) {
+            .dashboard-wrapper {
+                flex-direction: column;
+            }
+            .dashboard-main-pane {
+                margin-left: 0;
+                width: 100%;
+                max-width: 100%;
+                padding: 16px 14px 60px;
+            }
+        }
+
+        /* Top Bar */
+        .dash-topbar {
+            display: flex;
             justify-content: space-between;
+            align-items: center;
             flex-wrap: wrap;
             gap: 16px;
-            box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.3), 0 20px 40px rgba(0, 0, 0, 0.6);
+            margin-bottom: 26px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--admin-border);
         }
 
-        .admin-table-glass {
-            width: 100%;
-            background: linear-gradient(135deg, rgba(15, 23, 42, 0.85) 0%, rgba(20, 25, 55, 0.8) 100%);
-            backdrop-filter: blur(28px) saturate(180%);
-            -webkit-backdrop-filter: blur(28px) saturate(180%);
-            border: 1px solid rgba(99, 102, 241, 0.28);
-            border-radius: 28px;
-            overflow: hidden;
-            box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.3), 0 30px 60px -10px rgba(0, 0, 0, 0.65);
+        .dash-title-block h1 {
+            font-size: 26px;
+            font-weight: 800;
+            margin: 0 0 6px;
+            color: var(--admin-primary);
+            letter-spacing: -0.01em;
         }
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            text-align: left;
-        }
-
-        thead {
-            background: rgba(255, 255, 255, 0.08);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.16);
-        }
-
-        th {
-            padding: 16px 20px;
+        .dash-title-block p {
+            margin: 0;
             font-size: 13.5px;
-            font-weight: 700;
-            color: #00f2fe;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
+            color: var(--admin-text-muted);
         }
 
-        td {
-            padding: 16px 20px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-            color: rgba(255, 255, 255, 0.88);
-            font-size: 14px;
-            vertical-align: middle;
+        .dash-topbar-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
         }
 
-        tbody tr:hover {
-            background: rgba(255, 255, 255, 0.05);
-        }
-
-        .app-icon-img {
-            width: 48px;
-            height: 48px;
-            border-radius: 14px;
-            object-fit: cover;
-            border: 1px solid rgba(255, 255, 255, 0.25);
-            background: rgba(255, 255, 255, 0.08);
-        }
-
-        .btn-table {
+        .btn-modern {
             display: inline-flex;
             align-items: center;
-            gap: 6px;
-            padding: 6px 14px;
-            border-radius: 9999px;
-            font-size: 12.5px;
+            gap: 8px;
+            padding: 10px 18px;
+            border-radius: 9px;
+            font-size: 13px;
             font-weight: 600;
             text-decoration: none;
-            border: 1px solid transparent;
+            cursor: pointer;
             transition: all 0.2s ease;
-        }
-
-        .btn-edit {
-            background: rgba(0, 242, 254, 0.15);
-            border-color: rgba(0, 242, 254, 0.4);
-            color: #00f2fe;
-        }
-
-        .btn-edit:hover {
-            background: rgba(0, 242, 254, 0.3);
-            transform: translateY(-2px);
-        }
-
-        .btn-delete {
-            background: rgba(255, 68, 68, 0.15);
-            border-color: rgba(255, 68, 68, 0.4);
-            color: #ff5555;
-            margin-left: 6px;
-        }
-
-        .btn-delete:hover {
-            background: rgba(255, 68, 68, 0.3);
-            transform: translateY(-2px);
-        }
-
-        .delete-confirmation-backdrop {
-            position: fixed;
-            inset: 0;
-            z-index: 2000;
-            display: grid;
-            place-items: center;
-            padding: 20px;
-            background: rgba(3, 6, 17, 0.76);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-        }
-
-        .delete-confirmation-backdrop[hidden] {
-            display: none;
-        }
-
-        .delete-confirmation-dialog {
-            width: min(100%, 420px);
-            padding: 30px;
-            border: 1px solid rgba(255, 85, 85, 0.55);
-            border-radius: 24px;
-            background: linear-gradient(145deg, rgba(19, 25, 45, 0.99), rgba(10, 15, 30, 0.99));
-            box-shadow: 0 24px 70px rgba(0, 0, 0, 0.6), 0 0 28px rgba(255, 68, 68, 0.16);
-            color: #fff;
-            text-align: center;
-        }
-
-        .delete-warning-icon {
-            display: grid;
-            width: 64px;
-            height: 64px;
-            place-items: center;
-            margin: 0 auto 18px;
-            border: 1px solid rgba(255, 85, 85, 0.4);
-            border-radius: 50%;
-            background: rgba(255, 68, 68, 0.13);
-            color: #ff6262;
-            font-size: 26px;
-        }
-
-        .delete-confirmation-dialog h2 {
-            margin-bottom: 10px;
-            color: #fff;
-            font-size: 21px;
-        }
-
-        .delete-confirmation-dialog p {
-            color: rgba(226, 232, 240, 0.78);
-            font-size: 14px;
-            line-height: 1.65;
-        }
-
-        .delete-product-name {
-            display: block;
-            margin: 12px 0 22px;
-            overflow-wrap: anywhere;
-            color: #fff;
-            font-weight: 700;
-        }
-
-        .delete-confirmation-actions {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-        }
-
-        .delete-confirmation-actions button,
-        .delete-confirmation-actions a {
-            min-height: 42px;
-            padding: 0 18px;
             border: 1px solid transparent;
-            border-radius: 9999px;
-            font: inherit;
-            font-size: 14px;
-            font-weight: 700;
-            cursor: pointer;
         }
 
-        .delete-cancel-button {
-            border-color: rgba(148, 163, 184, 0.35) !important;
-            background: rgba(148, 163, 184, 0.12);
-            color: #e2e8f0;
+        .btn-primary-action {
+            background: var(--admin-primary);
+            color: #ffffff !important;
+            box-shadow: 0 4px 12px rgba(30, 58, 53, 0.2);
         }
 
-        .delete-confirm-button {
-            background: #dc3d4b;
-            color: #fff;
+        .btn-primary-action:hover {
+            background: var(--admin-primary-light);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(30, 58, 53, 0.25);
         }
 
-        .delete-cancel-button:hover {
-            background: rgba(148, 163, 184, 0.22);
+        .btn-outline-action {
+            background: #ffffff;
+            border-color: var(--admin-border);
+            color: var(--admin-text-main) !important;
         }
 
-        .delete-confirm-button:hover {
-            background: #f04452;
+        .btn-outline-action:hover {
+            background: #f2eee8;
+            border-color: #d1c7bc;
         }
 
-        .admin-form-layer {
-            position: fixed;
-            inset: 0;
-            z-index: 3000;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow-y: auto;
-            padding: max(24px, env(safe-area-inset-top)) 16px max(24px, env(safe-area-inset-bottom));
-            background: rgba(3, 6, 17, 0.38);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            animation: overlay-fade-in 220ms ease-out both;
-            overscroll-behavior: contain;
+        /* KPI Cards Grid */
+        .kpi-cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 18px;
+            margin-bottom: 28px;
         }
 
-        .admin-form-dashboard-background {
-            position: fixed;
-            inset: 0;
-            z-index: 0;
-            width: 100%;
-            height: 100%;
-            border: 0;
-            pointer-events: none;
-            animation: dashboard-reveal 500ms ease-out both;
-        }
-
-        .admin-form-card {
-            box-sizing: border-box;
-            width: 100%;
-            max-width: 520px;
-            max-height: calc(100vh - 48px);
-            max-height: calc(100dvh - 48px);
-            overflow-y: auto;
-            padding: 38px 32px;
-            border: 1px solid rgba(99, 102, 241, 0.38);
-            border-radius: 32px;
-            background: linear-gradient(135deg, rgba(15, 23, 42, 0.96), rgba(30, 27, 75, 0.94), rgba(15, 23, 42, 0.97));
-            box-shadow: 0 25px 60px -10px rgba(0, 0, 0, 0.9), 0 0 35px rgba(99, 102, 241, 0.25);
-            animation: form-card-enter 300ms cubic-bezier(0.2, 0.75, 0.25, 1) both;
-            overscroll-behavior: contain;
-            scrollbar-width: thin;
-        }
-
-        .admin-form-card h2 {
-            margin-bottom: 4px;
-            color: #fff;
-            font-size: 26px;
-            text-align: center;
-            line-height: 1.3;
-            overflow-wrap: anywhere;
-        }
-
-        .admin-form-card .form-description {
-            margin-bottom: 24px;
-            color: var(--text-muted);
-            font-size: 13.5px;
-            text-align: center;
-        }
-
-        .admin-form-card .form-group {
-            margin-bottom: 20px;
-        }
-
-        .admin-form-card .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            color: rgba(255, 255, 255, 0.9);
-            font-size: 13.5px;
-            font-weight: 700;
-        }
-
-        .admin-form-card .cyber-input {
-            box-sizing: border-box;
-            width: 100%;
-            padding: 13px 18px;
-            border: 1px solid rgba(0, 240, 255, 0.25);
-            border-radius: 16px;
-            outline: none;
-            background: rgba(0, 240, 255, 0.06);
-            color: #fff;
-            font: inherit;
-            font-size: 16px;
-        }
-
-        .admin-form-card textarea.cyber-input {
-            min-height: 95px;
-            resize: vertical;
-        }
-
-        .admin-form-card .file-upload-box {
-            position: relative;
-            padding: 22px;
-            border: 2px dashed rgba(0, 240, 255, 0.35);
-            border-radius: 20px;
-            background: rgba(0, 240, 255, 0.04);
-            text-align: center;
-        }
-
-        .image-source-options {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 12px;
-        }
-
-        .image-source-option {
-            flex: 1;
-            padding: 10px 12px;
-            border: 1px solid rgba(99, 102, 241, 0.3);
-            border-radius: 14px;
-            background: rgba(255, 255, 255, 0.035);
-            color: rgba(255, 255, 255, 0.85);
-            cursor: pointer;
-            text-align: center;
-            transition: border-color 160ms ease, background-color 160ms ease;
-        }
-
-        .image-source-option:has(input:checked) {
-            border-color: var(--cyber-cyan);
-            background: rgba(0, 240, 255, 0.1);
-        }
-
-        .image-source-option input {
-            margin-right: 6px;
-            accent-color: var(--cyber-cyan);
-        }
-
-        .image-source-panel[hidden] {
-            display: none;
-        }
-
-        .image-url-hint {
-            margin-top: 6px;
-            color: var(--text-dim);
-            font-size: 12px;
-        }
-
-        .admin-form-card .file-upload-box input[type="file"] {
-            position: absolute;
-            inset: 0;
-            width: 100%;
-            height: 100%;
-            opacity: 0;
-            cursor: pointer;
-        }
-
-        .admin-form-card .current-app-preview {
+        .kpi-card {
+            background: var(--admin-card-bg);
+            border: 1px solid var(--admin-border);
+            border-radius: var(--admin-radius);
+            padding: 20px 22px;
+            box-shadow: var(--admin-shadow);
             display: flex;
             align-items: center;
             gap: 16px;
-            margin-bottom: 12px;
-            padding: 12px 16px;
-            border: 1px solid rgba(99, 102, 241, 0.2);
-            border-radius: 16px;
-            background: rgba(255, 255, 255, 0.03);
-            color: #fff;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
 
-        .admin-form-card .current-app-preview img {
-            width: 56px;
-            height: 56px;
+        .kpi-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.07);
+        }
+
+        .kpi-icon-circle {
+            width: 52px;
+            height: 52px;
             border-radius: 14px;
-            object-fit: cover;
+            display: grid;
+            place-items: center;
+            font-size: 20px;
+            flex-shrink: 0;
         }
 
-        .admin-form-card .file-preview-wrap {
-            display: none;
-            margin-top: 10px;
-            color: var(--cyber-emerald);
+        .kpi-icon-products { background: #e0f2fe; color: #0284c7; }
+        .kpi-icon-stock { background: #e8f5e9; color: #2e7d32; }
+        .kpi-icon-low { background: #fef3c7; color: #d97706; }
+        .kpi-icon-value { background: #f3e8ff; color: #7e22ce; }
+
+        .kpi-card-info span {
+            display: block;
+            font-size: 12.5px;
+            color: var(--admin-text-muted);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
         }
 
-        .admin-error {
-            margin-bottom: 18px;
-            padding: 12px 18px;
-            border: 1px solid var(--cyber-pink);
-            border-radius: 16px;
-            background: rgba(255, 42, 133, 0.18);
-            color: #ff66b2;
-            font-size: 13px;
-            font-weight: 700;
-            text-align: center;
+        .kpi-card-info strong {
+            display: block;
+            font-size: 24px;
+            font-weight: 800;
+            color: var(--admin-text-main);
+            margin-top: 4px;
         }
 
-        .inventory-alert {
-            margin-bottom: 20px;
+        /* Control & Filter Toolbar */
+        .dash-toolbar-card {
+            background: var(--admin-card-bg);
+            border: 1px solid var(--admin-border);
+            border-radius: var(--admin-radius);
             padding: 16px 20px;
-            border: 1px solid rgba(245, 158, 11, 0.55);
-            border-radius: 18px;
-            background: rgba(245, 158, 11, 0.12);
-            color: #fbbf24;
-        }
-
-        .inventory-alert h3 {
-            margin-bottom: 8px;
-            color: #fcd34d;
-            font-size: 16px;
-        }
-
-        .inventory-alert ul {
+            margin-bottom: 20px;
+            box-shadow: var(--admin-shadow);
             display: flex;
             flex-wrap: wrap;
-            gap: 8px 18px;
-            margin: 0;
-            padding-left: 20px;
+            gap: 16px;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .dash-search-box {
+            position: relative;
+            flex: 1;
+            min-width: 260px;
+            max-width: 420px;
+        }
+
+        .dash-search-box i {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #9c9489;
+            font-size: 14px;
+        }
+
+        .dash-search-box input {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 10px 36px 10px 38px;
+            border: 1px solid var(--admin-border);
+            border-radius: 8px;
+            background: #faf8f5;
+            font: inherit;
+            font-size: 13.5px;
+            outline: none;
+            transition: border-color 0.2s, background 0.2s;
+        }
+
+        .dash-search-box input:focus {
+            border-color: var(--admin-primary);
+            background: #ffffff;
+            box-shadow: 0 0 0 3px rgba(30, 58, 53, 0.1);
+        }
+
+        .dash-search-clear {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: transparent;
+            border: 0;
+            color: #9c9489;
+            cursor: pointer;
+            display: none;
+        }
+
+        .dash-filters-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .filter-pill-btn {
+            padding: 7px 14px;
+            border-radius: 9999px;
+            background: #faf8f5;
+            border: 1px solid var(--admin-border);
+            font-size: 12.5px;
+            font-weight: 600;
+            color: var(--admin-text-muted);
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .filter-pill-btn:hover {
+            border-color: #c4b9ac;
+            color: var(--admin-text-main);
+        }
+
+        .filter-pill-btn.active {
+            background: var(--admin-primary);
+            border-color: var(--admin-primary);
+            color: #ffffff;
+        }
+
+        .dash-sort-select {
+            padding: 8px 12px;
+            border: 1px solid var(--admin-border);
+            border-radius: 8px;
+            background: #faf8f5;
+            font: inherit;
             font-size: 13px;
+            color: var(--admin-text-main);
+            outline: none;
         }
 
-        .analytics-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
-            gap: 14px;
-            margin-bottom: 22px;
+        /* Products Table Card */
+        .dash-table-card {
+            background: var(--admin-card-bg);
+            border: 1px solid var(--admin-border);
+            border-radius: var(--admin-radius);
+            box-shadow: var(--admin-shadow);
+            overflow: hidden;
         }
 
-        .analytics-card {
-            padding: 20px;
-            border: 1px solid rgba(0, 242, 254, 0.2);
-            border-radius: 20px;
-            background: linear-gradient(135deg, rgba(15, 23, 42, 0.88), rgba(20, 25, 55, 0.82));
-        }
-
-        .analytics-card span {
-            display: block;
-            color: var(--text-muted);
-            font-size: 13px;
-        }
-
-        .analytics-card strong {
-            display: block;
-            margin-top: 8px;
-            color: #fff;
-            font-size: 25px;
-        }
-
-        .analytics-card small {
-            display: block;
-            margin-top: 6px;
-            color: var(--text-dim);
-        }
-
-        .analytics-section {
-            margin: 26px 0;
-        }
-
-        .analytics-section h3 {
-            margin: 0 0 12px;
-            color: #fff;
-            font-size: 19px;
-        }
-
-        .analytics-table-wrap {
+        .table-responsive {
+            width: 100%;
             overflow-x: auto;
         }
 
-        .analytics-table-wrap table {
-            min-width: 760px;
+        .dash-table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 13.5px;
         }
 
-        .analytics-table-wrap th,
-        .analytics-table-wrap td {
+        .dash-table th {
+            background: #f5f1eb;
+            color: #554d45;
+            font-size: 11.5px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: 14px 18px;
+            border-bottom: 1px solid var(--admin-border);
             white-space: nowrap;
         }
 
-        .trend-up { color: #34d399 !important; }
-        .trend-down { color: #fca5a5 !important; }
+        .dash-table td {
+            padding: 16px 18px;
+            border-bottom: 1px solid #f0eae1;
+            color: #3b342e;
+            vertical-align: middle;
+        }
 
-        .stock-badge {
+        .dash-table tbody tr {
+            transition: background 0.15s ease;
+        }
+
+        .dash-table tbody tr:hover {
+            background: #faf7f2;
+        }
+
+        /* Product Cell */
+        .prod-cell {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .prod-thumb-wrap {
+            width: 52px;
+            height: 52px;
+            border-radius: 10px;
+            border: 1px solid var(--admin-border);
+            overflow: hidden;
+            background: #f7f4ef;
+            flex-shrink: 0;
+            position: relative;
+        }
+
+        .prod-thumb-wrap img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+
+        .prod-thumb-wrap:hover img {
+            transform: scale(1.15);
+        }
+
+        .prod-meta-title {
+            font-weight: 700;
+            color: var(--admin-primary);
+            font-size: 14px;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .prod-cat-badge {
             display: inline-block;
-            padding: 5px 10px;
-            border: 1px solid rgba(16, 185, 129, 0.4);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 10.5px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            background: #efebe4;
+            color: #63574d;
+        }
+
+        .prod-meta-desc {
+            font-size: 12px;
+            color: var(--admin-text-muted);
+            max-width: 320px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        /* Price & Margin */
+        .price-chip {
+            font-weight: 700;
+            color: var(--admin-text-main);
+            font-size: 14px;
+        }
+
+        .cost-chip {
+            font-size: 12px;
+            color: var(--admin-text-muted);
+            display: block;
+            margin-top: 2px;
+        }
+
+        .margin-badge {
+            display: inline-block;
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--admin-green);
+            background: var(--admin-green-bg);
+            padding: 1px 6px;
+            border-radius: 4px;
+            margin-top: 3px;
+        }
+
+        /* Stock Stepper in Table */
+        .stock-control-cell {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .stock-status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
             border-radius: 9999px;
-            background: rgba(16, 185, 129, 0.12);
-            color: #34d399;
+            font-size: 12px;
             font-weight: 700;
             white-space: nowrap;
         }
 
-        .stock-badge.is-low,
-        .stock-badge.is-empty {
-            border-color: rgba(245, 158, 11, 0.45);
-            background: rgba(245, 158, 11, 0.12);
+        .stock-status-pill.status-ok {
+            background: var(--admin-green-bg);
+            color: var(--admin-green);
+            border: 1px solid #bbf7d0;
+        }
+
+        .stock-status-pill.status-low {
+            background: var(--admin-amber-bg);
+            color: var(--admin-amber);
+            border: 1px solid #fde68a;
+        }
+
+        .stock-status-pill.status-empty {
+            background: var(--admin-red-bg);
+            color: var(--admin-red);
+            border: 1px solid #fecaca;
+        }
+
+        .stock-quick-stepper {
+            display: inline-flex;
+            border: 1px solid var(--admin-border);
+            border-radius: 6px;
+            overflow: hidden;
+            background: #ffffff;
+        }
+
+        .stock-quick-stepper button {
+            background: transparent;
+            border: 0;
+            padding: 4px 8px;
+            font-size: 11px;
+            color: var(--admin-text-main);
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+
+        .stock-quick-stepper button:hover {
+            background: #f0eae1;
+            color: var(--admin-primary);
+        }
+
+        /* Action Buttons */
+        .table-actions-cell {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            justify-content: flex-end;
+        }
+
+        .btn-action-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid var(--admin-border);
+            background: #ffffff;
+            color: var(--admin-text-main);
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.15s ease;
+            font-size: 13px;
+        }
+
+        .btn-action-icon:hover {
+            border-color: #c4b9ac;
+            background: #f7f4ef;
+            transform: translateY(-1px);
+        }
+
+        .btn-action-icon.btn-edit:hover {
+            color: #0284c7;
+            border-color: #7dd3fc;
+            background: #f0f9ff;
+        }
+
+        .btn-action-icon.btn-del:hover {
+            color: #dc2626;
+            border-color: #fca5a5;
+            background: #fef2f2;
+        }
+
+        /* Modal Overlay System */
+        .dash-modal-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            background: rgba(30, 25, 20, 0.45);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.25s ease, visibility 0.25s ease;
+        }
+
+        .dash-modal-overlay.open {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .dash-modal-card {
+            background: #ffffff;
+            border: 1px solid var(--admin-border);
+            border-radius: 16px;
+            width: 100%;
+            max-width: 580px;
+            max-height: calc(100vh - 40px);
+            overflow-y: auto;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.2);
+            transform: scale(0.96) translateY(10px);
+            transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            padding: 28px;
+            box-sizing: border-box;
+        }
+
+        .dash-modal-overlay.open .dash-modal-card {
+            transform: scale(1) translateY(0);
+        }
+
+        .dash-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 14px;
+            border-bottom: 1px solid #f0eae1;
+        }
+
+        .dash-modal-header h2 {
+            margin: 0;
+            font-size: 20px;
+            font-weight: 800;
+            color: var(--admin-primary);
+        }
+
+        .dash-modal-close {
+            background: transparent;
+            border: 0;
+            font-size: 18px;
+            color: #9c9489;
+            cursor: pointer;
+            padding: 4px 8px;
+        }
+
+        .dash-modal-close:hover {
+            color: #dc2626;
+        }
+
+        /* Form Controls inside Modal */
+        .form-grid-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+        }
+
+        .form-field-group {
+            margin-bottom: 16px;
+        }
+
+        .form-field-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: #443d37;
+        }
+
+        .form-input-modern {
+            box-sizing: border-box;
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid #dcd3c8;
+            border-radius: 8px;
+            background: #faf8f5;
+            color: #302923;
+            font: inherit;
+            font-size: 13.5px;
+            outline: none;
+            transition: border 0.15s, background 0.15s;
+        }
+
+        .form-input-modern:focus {
+            border-color: var(--admin-primary);
+            background: #ffffff;
+            box-shadow: 0 0 0 3px rgba(30, 58, 53, 0.1);
+        }
+
+        textarea.form-input-modern {
+            min-height: 80px;
+            resize: vertical;
+        }
+
+        .image-preview-box {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 12px;
+            border: 1px solid var(--admin-border);
+            border-radius: 8px;
+            background: #faf8f5;
+            margin-top: 10px;
+        }
+
+        .image-preview-box img {
+            width: 56px;
+            height: 56px;
+            border-radius: 6px;
+            object-fit: cover;
+            border: 1px solid #dcd3c8;
+            background: #ffffff;
+        }
+
+        /* Toast Notifications */
+        .admin-toast-container {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            z-index: 10000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .admin-toast {
+            background: #1e3a35;
+            color: #ffffff;
+            padding: 12px 20px;
+            border-radius: 10px;
+            font-size: 13.5px;
+            font-weight: 600;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            animation: toastSlide 0.3s ease forwards;
+        }
+
+        .admin-toast.toast-error {
+            background: #dc2626;
+        }
+
+        @keyframes toastSlide {
+            from { transform: translateX(50px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        /* Comprehensive Dark Mode Enhancements */
+        body.admin-storefront[data-theme="dark"] .dash-table th {
+            background: #18202c;
+            color: #94a3b8;
+            border-bottom-color: var(--admin-border);
+        }
+
+        body.admin-storefront[data-theme="dark"] .dash-table td {
+            color: #edf2f7;
+            border-bottom-color: #202938;
+        }
+
+        body.admin-storefront[data-theme="dark"] .dash-table tbody tr:hover {
+            background: #1a2230;
+        }
+
+        body.admin-storefront[data-theme="dark"] .dash-search-box input,
+        body.admin-storefront[data-theme="dark"] .dash-sort-select,
+        body.admin-storefront[data-theme="dark"] .filter-pill-btn {
+            background: #10151e;
+            border-color: var(--admin-border);
+            color: #edf2f7;
+        }
+
+        body.admin-storefront[data-theme="dark"] .filter-pill-btn.active {
+            background: #203f3a;
+            border-color: #34d399;
+            color: #ffffff;
+        }
+
+        body.admin-storefront[data-theme="dark"] .btn-outline-action {
+            background: #161c27;
+            border-color: var(--admin-border);
+            color: #edf2f7 !important;
+        }
+
+        body.admin-storefront[data-theme="dark"] .btn-outline-action:hover {
+            background: #222c3c;
+        }
+
+        body.admin-storefront[data-theme="dark"] .dash-modal-card {
+            background: #161c27;
+            border-color: var(--admin-border);
+            color: #edf2f7;
+        }
+
+        body.admin-storefront[data-theme="dark"] .dash-modal-header {
+            border-bottom-color: var(--admin-border);
+        }
+
+        body.admin-storefront[data-theme="dark"] .dash-modal-header h2 {
+            color: #34d399;
+        }
+
+        body.admin-storefront[data-theme="dark"] .form-field-group label {
+            color: #cbd5e1;
+        }
+
+        body.admin-storefront[data-theme="dark"] .form-input-modern {
+            background: #10151e;
+            border-color: var(--admin-border);
+            color: #edf2f7;
+        }
+
+        body.admin-storefront[data-theme="dark"] .form-input-modern:focus {
+            border-color: #34d399;
+            background: #131a26;
+        }
+
+        body.admin-storefront[data-theme="dark"] .image-preview-box {
+            background: #10151e;
+            border-color: var(--admin-border);
+        }
+
+        body.admin-storefront[data-theme="dark"] .image-preview-box img {
+            background: #161c27;
+            border-color: var(--admin-border);
+        }
+
+        body.admin-storefront[data-theme="dark"] .prod-thumb-wrap {
+            background: #10151e;
+            border-color: var(--admin-border);
+        }
+
+        body.admin-storefront[data-theme="dark"] .prod-cat-badge {
+            background: #222b39;
+            color: #94a3b8;
+        }
+
+        body.admin-storefront[data-theme="dark"] .cost-chip {
+            color: #94a3b8;
+        }
+
+        body.admin-storefront[data-theme="dark"] .stock-quick-stepper {
+            background: #10151e;
+            border-color: var(--admin-border);
+        }
+
+        body.admin-storefront[data-theme="dark"] .stock-quick-stepper button {
+            color: #edf2f7;
+        }
+
+        body.admin-storefront[data-theme="dark"] .stock-quick-stepper button:hover {
+            background: #222c3c;
+            color: #34d399;
+        }
+
+        body.admin-storefront[data-theme="dark"] .btn-action-icon {
+            background: #1a2230;
+            border-color: var(--admin-border);
+            color: #94a3b8;
+        }
+
+        body.admin-storefront[data-theme="dark"] .btn-action-icon.btn-edit:hover {
+            background: rgba(56, 189, 248, 0.15);
+            border-color: #38bdf8;
+            color: #38bdf8;
+        }
+
+        body.admin-storefront[data-theme="dark"] .btn-action-icon.btn-stock:hover {
+            background: rgba(251, 191, 36, 0.15);
+            border-color: #fbbf24;
             color: #fbbf24;
         }
 
-        .stock-badge.is-empty {
-            border-color: rgba(248, 113, 113, 0.45);
-            background: rgba(248, 113, 113, 0.12);
-            color: #fca5a5;
+        body.admin-storefront[data-theme="dark"] .btn-action-icon.btn-del:hover {
+            background: rgba(248, 113, 113, 0.15);
+            border-color: #f87171;
+            color: #f87171;
         }
 
-        @keyframes overlay-fade-in {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-
-        @keyframes dashboard-reveal {
-            from { opacity: 0.7; }
-            to { opacity: 1; }
-        }
-
-        @keyframes form-card-enter {
-            from { opacity: 0; transform: translateY(14px) scale(0.985); }
-            to { opacity: 1; transform: translateY(0) scale(1); }
-        }
-
-        @media (max-width: 600px) {
-            .admin-form-layer {
-                align-items: flex-start;
-                padding: max(12px, env(safe-area-inset-top)) 12px max(12px, env(safe-area-inset-bottom));
+        /* Responsive */
+        @media (max-width: 900px) {
+            .dashboard-main-pane {
+                padding: 20px 16px;
             }
-
-            .admin-form-card {
-                max-height: calc(100vh - 24px);
-                max-height: calc(100dvh - 24px);
-                padding: 24px 20px;
-                border-radius: 24px;
-            }
-
-            .admin-form-card h2 {
-                font-size: 23px;
-            }
-
-            .admin-form-card .form-group {
-                margin-bottom: 16px;
-            }
-
-            .admin-form-card .cyber-input {
-                padding: 12px 14px;
-            }
-
-            .admin-form-card .file-upload-box {
-                padding: 18px 14px;
-            }
-        }
-
-        @media (max-width: 360px) {
-            .admin-form-layer {
-                padding-right: 8px;
-                padding-left: 8px;
-            }
-
-            .admin-form-card {
-                padding: 20px 14px;
-                border-radius: 20px;
-            }
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-            .admin-form-layer,
-            .admin-form-dashboard-background,
-            .admin-form-card {
-                animation: none;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .delete-confirmation-dialog {
-                padding: 24px 18px;
-            }
-
-            .delete-confirmation-actions {
-                flex-direction: column-reverse;
+            .form-grid-row {
+                grid-template-columns: 1fr;
             }
         }
     </style>
-    <link rel="stylesheet" href="./backoffice-theme.css?v=<?php echo filemtime(__DIR__ . '/backoffice-theme.css'); ?>">
-    <link rel="stylesheet" href="../css/theme-mode.css?v=<?php echo filemtime(__DIR__ . '/../css/theme-mode.css'); ?>">
 </head>
 
 <body class="fashion-storefront admin-storefront">
-    <div class="cyber-grid-lines"></div>
+    <div class="dashboard-wrapper">
+        <!-- Render Navigation Sidebar -->
+        <?php renderAdminPrimaryNavigation($currentAdmin, $adminView === 'products' ? 'products' : 'dashboard'); ?>
 
-    <?php if ($action === 'add' || $action === 'edit'): ?>
-        <?php $isEditing = $action === 'edit'; ?>
-        <iframe class="admin-form-dashboard-background" src="index.php?action=list" title="Product dashboard background" aria-hidden="true" tabindex="-1"></iframe>
-        <div class="admin-form-layer">
-            <div class="admin-form-card">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
-                    <a href="index.php" class="cyber-glow-btn" style="padding: 6px 16px; font-size: 13px;">
-                        <i class="fas fa-arrow-left"></i> ត្រឡប់ក្រោយ
-                    </a>
-                    <span class="dna-badge" style="font-size: 11px; padding: 4px 10px;">
-                        <i class="fas fa-<?= $isEditing ? 'pen' : 'plus-circle' ?>"></i> <?= $isEditing ? 'Edit Product' : 'New Product' ?>
-                    </span>
-                </div>
-                <h2><?= $isEditing ? 'កែសម្រួលផលិតផល' : 'បន្ថែមផលិតផលថ្មី' ?></h2>
-                <p class="form-description"><?= $isEditing ? 'ផ្លាស់ប្តូរឈ្មោះ ព័ត៌មានលម្អិត តម្លៃ ឬរូបភាពផលិតផល' : 'សូមបំពេញព័ត៌មានលម្អិតនៃផលិតផលដែលអ្នកចង់ដាក់លក់' ?></p>
-
-                <?php if ($error_msg !== ''): ?>
-                    <div class="admin-error"><i class="fas fa-triangle-exclamation"></i> <?= htmlspecialchars($error_msg, ENT_QUOTES, 'UTF-8') ?></div>
-                <?php endif; ?>
-
-                <form action="index.php" method="POST" enctype="multipart/form-data">
-                    <input type="hidden" name="action" value="<?= $isEditing ? 'edit' : 'add' ?>">
-                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
-                    <?php if ($isEditing): ?>
-                        <input type="hidden" name="id" value="<?= (int) $id ?>">
-                    <?php endif; ?>
-
-                    <?php if (!$isEditing): ?>
-                    <div class="form-group" id="productLinkGroup">
-                        <label><i class="fas fa-link" style="color: var(--cyber-cyan); margin-right: 6px;"></i> Product Link (Auto-fill)</label>
-                        <div style="display: flex; gap: 8px; align-items: stretch;">
-                            <input type="url" id="productLinkInput" class="cyber-input" placeholder="https://shopee.com/product/... or any product page link" style="flex: 1; margin: 0;">
-                            <button type="button" id="fetchProductBtn" class="cyber-buy-action" style="padding: 10px 18px; font-size: 13px; white-space: nowrap; flex-shrink: 0;">
-                                <i class="fas fa-wand-magic-sparkles"></i> Auto Fill
-                            </button>
+        <!-- Main Content Area -->
+        <main class="dashboard-main-pane" id="mainDashboardPane">
+            <?php if ($adminView === 'dashboard'): ?>
+                <!-- ========================================== -->
+                <!-- EXECUTIVE DASHBOARD OVERVIEW VIEW          -->
+                <!-- ========================================== -->
+                <header class="dash-topbar">
+                    <div class="dash-title-block">
+                        <h1><i class="fas fa-gauge-high" style="color: var(--admin-accent);"></i> ផ្ទាំងគ្រប់គ្រងទូទៅ (Store Dashboard)</h1>
+                        <p>ទិដ្ឋភាពទូទៅនៃប្រតិបត្តិការហាង ការលក់ ការបញ្ជាទិញ និងស្តុកទំនិញជាក់ស្តែង</p>
+                    </div>
+                    <div class="dash-topbar-actions">
+                        <button type="button" class="btn-modern btn-primary-action" id="openAddProductModal">
+                            <i class="fas fa-plus-circle"></i> + បន្ថែមផលិតផលថ្មី
+                        </button>
+                        <a href="operations.php?view=orders" class="btn-modern btn-outline-action">
+                            <i class="fas fa-receipt"></i> គ្រប់គ្រងការបញ្ជាទិញ
+                        </a>
+                        <a href="../home/index.php" target="_blank" rel="noopener noreferrer" class="btn-modern btn-outline-action" title="បើកមើលហាងផ្ទាល់">
+                            <i class="fas fa-arrow-up-right-from-square"></i> មើលទំព័រមុខហាង
+                        </a>
+                        <div class="theme-mode-control theme-mode-admin">
+                            <label class="theme-mode-label" for="adminThemeModeSelect">Theme</label>
+                            <select id="adminThemeModeSelect" data-theme-mode aria-label="Color theme">
+                                <option value="system">System</option>
+                                <option value="light">Light</option>
+                                <option value="dark">Dark</option>
+                            </select>
                         </div>
-                        <div id="fetchStatus" style="margin-top: 6px; font-size: 12px; color: var(--cyber-cyan); display: none;"></div>
                     </div>
-                    <?php endif; ?>
+                </header>
 
-                    <div class="form-group">
-                        <label><i class="fas fa-tag" style="color: var(--cyber-cyan); margin-right: 6px;"></i> ឈ្មោះផលិតផល (Product Name)</label>
-                        <input type="text" name="name" id="fieldName" class="cyber-input" value="<?= htmlspecialchars($formName, ENT_QUOTES, 'UTF-8') ?>" required>
+                <!-- KPI Metric Cards Grid -->
+                <section class="kpi-cards-grid" aria-label="Quick metrics">
+                    <div class="kpi-card">
+                        <div class="kpi-icon-circle kpi-icon-val"><i class="fas fa-sack-dollar"></i></div>
+                        <div class="kpi-card-info">
+                            <span>សរុបទឹកប្រាក់លក់ (Total Revenue)</span>
+                            <strong><?= $currencySymbol ?><?= number_format($dashTotalRevenue, 2) ?></strong>
+                            <small style="font-size: 11px; color: var(--admin-text-muted);">តម្លៃទំនិញក្នុងស្តុក: <?= $currencySymbol ?><?= number_format((float)($kpiStats['total_valuation'] ?? 0), 2) ?></small>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label><i class="fas fa-align-left" style="color: var(--cyber-purple); margin-right: 6px;"></i> ព័ត៌មានលម្អិត (Description)</label>
-                        <textarea name="description" id="fieldDescription" class="cyber-input" required><?= htmlspecialchars($formDescription, ENT_QUOTES, 'UTF-8') ?></textarea>
+                    <div class="kpi-card">
+                        <div class="kpi-icon-circle kpi-icon-orders" style="background: rgba(59, 130, 246, 0.12); color: #2563eb;"><i class="fas fa-receipt"></i></div>
+                        <div class="kpi-card-info">
+                            <span>ការបញ្ជាទិញសរុប (Total Orders)</span>
+                            <strong><?= $dashTotalOrders ?> <small style="font-size: 13px; font-weight: normal; color: var(--admin-text-muted);">Orders</small></strong>
+                            <small style="font-size: 11px; color: var(--admin-text-muted);"><?= $dashPendingOrders ?> Pending / <?= $dashCompletedOrders ?> Completed</small>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label><i class="fas fa-coins" style="color: var(--cyber-emerald); margin-right: 6px;"></i> Cost price (your purchase cost)</label>
-                        <input type="number" step="0.01" min="0" max="99999999.99" name="cost_price" id="fieldCostPrice" class="cyber-input" value="<?= htmlspecialchars($formCostPrice, ENT_QUOTES, 'UTF-8') ?>" placeholder="Leave empty if unknown">
-                        <div class="image-url-hint">Used to calculate profit or loss. Existing products need their cost entered before profit can be calculated.</div>
+                    <div class="kpi-card">
+                        <div class="kpi-icon-circle kpi-icon-products"><i class="fas fa-shirt"></i></div>
+                        <div class="kpi-card-info">
+                            <span>មុខទំនិញក្នុងស្តុក (Catalog Items)</span>
+                            <strong><?= count($productsList) ?> <small style="font-size: 13px; font-weight: normal; color: var(--admin-text-muted);">មុខទំនិញ</small></strong>
+                            <small style="font-size: 11px; color: var(--admin-text-muted);"><?= number_format((int)($kpiStats['total_units'] ?? 0)) ?> គ្រឿងសរុបក្នុងឃ្លាំង</small>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label><i class="fas fa-dollar-sign" style="color: var(--cyber-emerald); margin-right: 6px;"></i> តម្លៃជាដុល្លារ (Price in USD)</label>
-                        <input type="number" step="0.01" min="0" max="99999999.99" name="price" class="cyber-input" value="<?= htmlspecialchars($formPrice, ENT_QUOTES, 'UTF-8') ?>" required>
+                    <div class="kpi-card">
+                        <div class="kpi-icon-circle kpi-icon-customers" style="background: rgba(16, 185, 129, 0.12); color: #059669;"><i class="fas fa-users"></i></div>
+                        <div class="kpi-card-info">
+                            <span>អតិថិជនបានចុះឈ្មោះ (Customers)</span>
+                            <strong><?= $dashTotalCustomers ?> <small style="font-size: 13px; font-weight: normal; color: var(--admin-text-muted);">នាក់</small></strong>
+                            <small style="font-size: 11px; color: var(--admin-text-muted);"><a href="operations.php?view=customers" style="color: inherit; text-decoration: underline;">គ្រប់គ្រងអតិថិជន &rarr;</a></small>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label><i class="fas fa-boxes-stacked" style="color: var(--cyber-amber); margin-right: 6px;"></i> ចំនួនស្តុក (Stock amount)</label>
-                        <input type="number" step="1" min="0" max="2147483647" name="stock" class="cyber-input" value="<?= htmlspecialchars($formStock, ENT_QUOTES, 'UTF-8') ?>" required>
-                        <div class="image-url-hint">Set to 0 to hide this product from the storefront. Configure its low-stock alert in Inventory.</div>
-                    </div>
-                    <div class="form-group">
-                        <label><i class="fas fa-image" style="color: var(--cyber-pink); margin-right: 6px;"></i> រូបភាពផលិតផល (Product Image)</label>
-                        <?php if ($isEditing && !empty($product['image'])): ?>
-                            <div class="current-app-preview">
-                                <img src="<?= htmlspecialchars(preg_match('~^https?://~i', $product['image']) ? $product['image'] : '../' . $product['image'], ENT_QUOTES, 'UTF-8') ?>" alt="Current product image">
-                                <span>រូបភាពបច្ចុប្បន្ន — ទុកនៅទទេបើមិនចង់ប្តូរ</span>
+                </section>
+
+                <!-- Two-Column Overview Matrix -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 20px; margin-top: 24px;">
+                    <!-- Column 1: Recent Orders List -->
+                    <div class="dash-table-card" style="margin: 0; padding: 22px;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+                            <h2 style="font-size: 16px; font-weight: 700; color: var(--admin-text-main); margin: 0; display: flex; align-items: center; gap: 8px;">
+                                <i class="fas fa-clock-rotate-left" style="color: var(--admin-accent);"></i> ការបញ្ជាទិញថ្មីៗ (Recent Orders)
+                            </h2>
+                            <a href="operations.php?view=orders" class="btn-modern btn-outline-action" style="font-size: 12px; padding: 4px 10px;">មើលទាំងអស់ &rarr;</a>
+                        </div>
+                        <?php if (!empty($recentOrdersList)): ?>
+                            <div class="table-responsive">
+                                <table class="dash-table">
+                                    <thead>
+                                        <tr>
+                                            <th>លេខកូដ (Order Ref)</th>
+                                            <th>អតិថិជន</th>
+                                            <th>តម្លៃសរុប</th>
+                                            <th>ស្ថានភាព</th>
+                                            <th style="text-align: right;">សកម្មភាព</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <?php foreach ($recentOrdersList as $ro): ?>
+                                            <tr>
+                                                <td>
+                                                    <strong><?= htmlspecialchars($ro['order_reference'] ?: '#' . $ro['id'], ENT_QUOTES, 'UTF-8') ?></strong>
+                                                    <div style="font-size: 11px; color: var(--admin-text-muted);"><?= date('M d, H:i', strtotime($ro['created_at'])) ?></div>
+                                                </td>
+                                                <td>
+                                                    <div style="font-weight: 600;"><?= htmlspecialchars($ro['customer_name'], ENT_QUOTES, 'UTF-8') ?></div>
+                                                    <div style="font-size: 11px; color: var(--admin-text-muted);"><?= htmlspecialchars($ro['phone_number'], ENT_QUOTES, 'UTF-8') ?></div>
+                                                </td>
+                                                <td>
+                                                    <strong style="color: var(--admin-primary);"><?= $currencySymbol ?><?= number_format((float)$ro['total_amount'], 2) ?></strong>
+                                                </td>
+                                                <td>
+                                                    <?php
+                                                    $st = strtolower((string)$ro['status']);
+                                                    $badgeColor = ($st === 'completed' || $st === 'paid') ? '#059669' : ($st === 'pending' ? '#d97706' : '#dc2626');
+                                                    $badgeBg = ($st === 'completed' || $st === 'paid') ? 'rgba(5, 150, 105, 0.1)' : ($st === 'pending' ? 'rgba(217, 119, 6, 0.1)' : 'rgba(220, 38, 38, 0.1)');
+                                                    ?>
+                                                    <span style="display: inline-block; padding: 2px 8px; border-radius: 9999px; font-size: 11px; font-weight: 700; color: <?= $badgeColor ?>; background: <?= $badgeBg ?>;">
+                                                        <?= htmlspecialchars($ro['status'], ENT_QUOTES, 'UTF-8') ?>
+                                                    </span>
+                                                </td>
+                                                <td style="text-align: right;">
+                                                    <a href="operations.php?view=orders&amp;details=<?= (int)$ro['id'] ?>" class="btn-action-icon btn-edit" title="ពិនិត្យការបញ្ជាទិញ">
+                                                        <i class="fas fa-eye"></i>
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        <?php endforeach; ?>
+                                    </tbody>
+                                </table>
+                            </div>
+                        <?php else: ?>
+                            <div style="text-align: center; padding: 36px 16px; color: var(--admin-text-muted);">
+                                <i class="fas fa-inbox" style="font-size: 36px; opacity: 0.35; margin-bottom: 12px; display: block;"></i>
+                                <div style="font-weight: 600; font-size: 14px; margin-bottom: 6px;">មិនទាន់មានការបញ្ជាទិញថ្មីនៅឡើយទេ</div>
+                                <p style="font-size: 12px; margin: 0 0 16px;">រាល់ពេលមានអតិថិជនកុម្ម៉ង់ទិញទំនិញ ព័ត៌មាននឹងបង្ហាញនៅទីនេះភ្លាមៗ។</p>
+                                <a href="../home/index.php" target="_blank" class="btn-modern btn-outline-action" style="font-size: 12px; display: inline-flex;">
+                                    <i class="fas fa-store"></i> ទៅកាន់ទំព័រមុខហាង
+                                </a>
                             </div>
                         <?php endif; ?>
-                        <?php
-                        $currentImageIsUrl = !empty($product['image']) && preg_match('~^https?://~i', $product['image']);
-                        $postedImageSource = $_POST['image_source'] ?? null;
-                        $selectedImageSource = is_string($postedImageSource) ? $postedImageSource : ($currentImageIsUrl ? 'url' : 'upload');
-                        ?>
-                        <div class="image-source-options" role="radiogroup" aria-label="Image source">
-                            <label class="image-source-option">
-                                <input type="radio" name="image_source" value="upload" <?= $selectedImageSource === 'upload' ? 'checked' : '' ?>>
-                                Upload file
-                            </label>
-                            <label class="image-source-option">
-                                <input type="radio" name="image_source" value="url" <?= $selectedImageSource === 'url' ? 'checked' : '' ?>>
-                                Image link (URL)
-                            </label>
+                    </div>
+
+                    <!-- Column 2: Inventory Health & Management Shortcuts -->
+                    <div style="display: flex; flex-direction: column; gap: 20px;">
+                        <!-- Low Stock Card -->
+                        <div class="dash-table-card" style="margin: 0; padding: 22px;">
+                            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+                                <h2 style="font-size: 16px; font-weight: 700; color: var(--admin-text-main); margin: 0; display: flex; align-items: center; gap: 8px;">
+                                    <i class="fas fa-boxes-packing" style="color: #d97706;"></i> ស្ថានភាពស្តុកទំនិញ (Inventory Status)
+                                </h2>
+                                <a href="index.php?view=products" class="btn-modern btn-outline-action" style="font-size: 12px; padding: 4px 10px;">កាតាឡុកទំនិញ &rarr;</a>
+                            </div>
+                            <?php if (!empty($lowStockProducts)): ?>
+                                <div style="display: flex; flex-direction: column; gap: 10px;">
+                                    <?php foreach ($lowStockProducts as $lp): ?>
+                                        <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; border: 1px solid var(--admin-border); border-radius: 8px; background: rgba(0,0,0,0.015);">
+                                            <div style="display: flex; align-items: center; gap: 10px;">
+                                                <img src="<?= htmlspecialchars(!empty($lp['image']) ? '../' . ltrim($lp['image'], './\\') : '../home/logo/logome.png', ENT_QUOTES, 'UTF-8') ?>" alt="" style="width: 34px; height: 34px; border-radius: 6px; object-fit: cover;" onerror="this.src='../home/logo/logome.png'">
+                                                <div>
+                                                    <div style="font-size: 13px; font-weight: 600; color: var(--admin-text-main);"><?= htmlspecialchars($lp['name'], ENT_QUOTES, 'UTF-8') ?></div>
+                                                    <div style="font-size: 11px; color: var(--admin-text-muted);"><?= $currencySymbol ?><?= number_format((float)$lp['price'], 2) ?></div>
+                                                </div>
+                                            </div>
+                                            <div style="display: flex; align-items: center; gap: 8px;">
+                                                <span class="stock-status-pill <?= (int)$lp['stock'] === 0 ? 'stock-out' : 'stock-low' ?>" style="font-size: 11px;">
+                                                    <?= (int)$lp['stock'] === 0 ? 'អស់ស្តុក' : 'សល់ ' . (int)$lp['stock'] ?>
+                                                </span>
+                                                <button type="button" class="btn-action-icon btn-stock" data-adjust-id="<?= (int)$lp['id'] ?>" data-stock-val="<?= (int)$lp['stock'] ?>" data-name="<?= htmlspecialchars($lp['name'], ENT_QUOTES, 'UTF-8') ?>" title="កែប្រែចំនួនស្តុក">
+                                                    <i class="fas fa-cubes-stacked"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    <?php endforeach; ?>
+                                </div>
+                            <?php else: ?>
+                                <div style="text-align: center; padding: 24px 16px; color: var(--admin-text-muted);">
+                                    <i class="fas fa-circle-check" style="font-size: 32px; color: #059669; margin-bottom: 8px; display: block;"></i>
+                                    <div style="font-weight: 600; color: #059669; font-size: 13.5px;">ស្តុកទំនិញទាំងអស់ស្ថិតក្នុងកម្រិតល្អ!</div>
+                                    <div style="font-size: 12px; margin-top: 4px;">គ្មានទំនិញណាមួយជិតអស់ ឬដាច់ស្តុកឡើយ។</div>
+                                </div>
+                            <?php endif; ?>
                         </div>
-                        <div class="image-source-panel" id="imageUploadPanel">
-                            <div class="file-upload-box">
-                                <input type="file" name="icon" id="iconFileInput" accept="image/jpeg,image/png,image/gif,image/webp">
-                                <i class="fas fa-cloud-arrow-up" style="font-size: 32px; color: var(--cyber-cyan); margin-bottom: 8px;"></i>
-                                <div style="font-size: 14px; font-weight: 700; color: #fff;">ចុចទីនេះដើម្បីជ្រើសរើសរូបភាពផលិតផល</div>
-                                <div style="font-size: 12px; color: var(--text-dim); margin-top: 4px;">គាំទ្រ: PNG, JPG, WEBP ឬ GIF</div>
-                                <div class="file-preview-wrap" id="filePreviewWrap"><i class="fas fa-check"></i> <span id="fileNameLabel"></span></div>
+
+                        <!-- Quick Shortcuts Card -->
+                        <div class="dash-table-card" style="margin: 0; padding: 22px;">
+                            <h2 style="font-size: 16px; font-weight: 700; color: var(--admin-text-main); margin: 0 0 14px; display: flex; align-items: center; gap: 8px;">
+                                <i class="fas fa-bolt" style="color: #b17b60;"></i> ផ្លូវកាត់ការគ្រប់គ្រងរហ័ស (Quick Actions)
+                            </h2>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px;">
+                                <a href="index.php?view=products" class="btn-modern btn-outline-action" style="justify-content: flex-start; padding: 10px 12px; text-decoration: none; font-size: 12.5px;">
+                                    <i class="fas fa-boxes-stacked" style="color: var(--admin-accent);"></i> កាតាឡុកផលិតផល
+                                </a>
+                                <a href="operations.php?view=orders" class="btn-modern btn-outline-action" style="justify-content: flex-start; padding: 10px 12px; text-decoration: none; font-size: 12.5px;">
+                                    <i class="fas fa-receipt" style="color: #2563eb;"></i> ផ្ទៀងផ្ទាត់ KHQR
+                                </a>
+                                <a href="../customer-service/dashboard.php" class="btn-modern btn-outline-action" style="justify-content: flex-start; padding: 10px 12px; text-decoration: none; font-size: 12.5px;">
+                                    <i class="fas fa-headset" style="color: #059669;"></i> សារពីអតិថិជន
+                                </a>
+                                <a href="store-management.php?view=translations" class="btn-modern btn-outline-action" style="justify-content: flex-start; padding: 10px 12px; text-decoration: none; font-size: 12.5px;">
+                                    <i class="fas fa-file-pen" style="color: #d97706;"></i> ខ្លឹមសារ &amp; Note
+                                </a>
+                                <a href="store-management.php?view=store" class="btn-modern btn-outline-action" style="justify-content: flex-start; padding: 10px 12px; text-decoration: none; font-size: 12.5px;">
+                                    <i class="fas fa-gear" style="color: #4b5563;"></i> ការកំណត់ហាង
+                                </a>
+                                <a href="backup.php" class="btn-modern btn-outline-action" style="justify-content: flex-start; padding: 10px 12px; text-decoration: none; font-size: 12.5px;">
+                                    <i class="fas fa-database" style="color: #6366f1;"></i> បម្រុងទុកទិន្នន័យ
+                                </a>
                             </div>
                         </div>
-                        <div class="image-source-panel" id="imageUrlPanel" hidden>
-                            <input type="url" name="image_url" id="imageUrlInput" class="cyber-input" maxlength="255" placeholder="https://example.com/product-image.jpg" value="<?= htmlspecialchars($formImageUrl !== '' ? $formImageUrl : ($currentImageIsUrl ? $product['image'] : ''), ENT_QUOTES, 'UTF-8') ?>">
-                            <div class="image-url-hint">Use a direct image link starting with http:// or https://.</div>
-                        </div>
                     </div>
-                    <button type="submit" class="cyber-buy-action" style="width: 100%; padding: 14px; margin-top: 12px; font-size: 15px;">
-                        <i class="fas fa-<?= $isEditing ? 'save' : 'check-circle' ?>"></i>
-                        <?= $isEditing ? 'រក្សាទុកការកែប្រែ (Save Changes)' : 'រក្សាទុក និងដាក់លក់ (Add Product)' ?>
+                </div>
+            <?php else: ?>
+                <!-- ========================================== -->
+                <!-- PRODUCT CATALOG VIEW                       -->
+                <!-- ========================================== -->
+            <!-- Top Dashboard Bar -->
+            <header class="dash-topbar">
+                <div class="dash-title-block">
+                    <h1><i class="fas fa-boxes-stacked" style="color: var(--admin-accent);"></i> គ្រប់គ្រងផលិតផល (Product Catalog)</h1>
+                    <p>មើល បន្ថែម កែសម្រួលតម្លៃ និងតាមដានស្តុកទំនិញជាក់ស្តែងទាំងអស់</p>
+                </div>
+                <div class="dash-topbar-actions">
+                    <button type="button" class="btn-modern btn-primary-action" id="openAddProductModal">
+                        <i class="fas fa-plus-circle"></i> + បន្ថែមផលិតផលថ្មី
                     </button>
-                </form>
-            </div>
-        </div>
-    <?php elseif ($action === 'delete'): ?>
-        <div class="admin-form-layer">
-            <section class="delete-confirmation-dialog" role="alertdialog" aria-modal="true">
-                <div class="delete-warning-icon"><i class="fas fa-trash-can"></i></div>
-                <h2>បញ្ជាក់ការលុបផលិតផល</h2>
-                <p>តើអ្នកពិតជាចង់លុបផលិតផលនេះមែនទេ? សកម្មភាពនេះមិនអាចត្រឡប់វិញបានទេ។</p>
-                <span class="delete-product-name"><?= htmlspecialchars($product['name'], ENT_QUOTES, 'UTF-8') ?></span>
-                <?php if ($error_msg !== ''): ?><div class="admin-error"><?= htmlspecialchars($error_msg, ENT_QUOTES, 'UTF-8') ?></div><?php endif; ?>
-                <form action="index.php" method="POST" class="delete-confirmation-actions">
-                    <input type="hidden" name="action" value="delete">
-                    <input type="hidden" name="id" value="<?= (int) $id ?>">
-                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
-                    <a href="index.php" class="delete-cancel-button" style="display: inline-flex; align-items: center; text-decoration: none;">បោះបង់</a>
-                    <button type="submit" class="delete-confirm-button"><i class="fas fa-trash"></i> លុបផលិតផល</button>
-                </form>
+                    <a href="../home/index.php" target="_blank" rel="noopener noreferrer" class="btn-modern btn-outline-action" title="បើកមើលហាងផ្ទាល់">
+                        <i class="fas fa-arrow-up-right-from-square"></i> មើលទំព័រមុខហាង
+                    </a>
+                    <div class="theme-mode-control theme-mode-admin">
+                        <label class="theme-mode-label" for="adminThemeModeSelect">Theme</label>
+                        <select id="adminThemeModeSelect" data-theme-mode aria-label="Color theme">
+                            <option value="system">System</option>
+                            <option value="light">Light</option>
+                            <option value="dark">Dark</option>
+                        </select>
+                    </div>
+                </div>
+            </header>
+
+            <!-- KPI Metric Cards -->
+            <section class="kpi-cards-grid" aria-label="Quick metrics">
+                <div class="kpi-card">
+                    <div class="kpi-icon-circle kpi-icon-products"><i class="fas fa-shirt"></i></div>
+                    <div class="kpi-card-info">
+                        <span>ផលិតផលសរុប (Total Items)</span>
+                        <strong><?= count($productsList) ?> <small style="font-size: 13px; font-weight: normal; color: var(--admin-text-muted);">មុខទំនិញ</small></strong>
+                    </div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-icon-circle kpi-icon-stock"><i class="fas fa-warehouse"></i></div>
+                    <div class="kpi-card-info">
+                        <span>ស្តុកសរុបក្នុងឃ្លាំង (Total Units)</span>
+                        <strong><?= number_format((int)($kpiStats['total_units'] ?? 0)) ?> <small style="font-size: 13px; font-weight: normal; color: var(--admin-text-muted);">គ្រឿង</small></strong>
+                    </div>
+                </div>
+                <div class="kpi-card" id="kpiCardLowStock" style="cursor: pointer;" title="ចុចដើម្បីមើលផលិតផលស្តុកទាប">
+                    <div class="kpi-icon-circle kpi-icon-low"><i class="fas fa-triangle-exclamation"></i></div>
+                    <div class="kpi-card-info">
+                        <span>ការជូនដំណឹងស្តុកទាប (Low Stock)</span>
+                        <strong style="color: <?= ((int)($kpiStats['low_stock_count'] ?? 0)) > 0 ? '#d97706' : '#2e7d32'; ?>">
+                            <?= (int)($kpiStats['low_stock_count'] ?? 0) ?> <small style="font-size: 13px; font-weight: normal;">មុខ</small>
+                        </strong>
+                    </div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-icon-circle kpi-icon-value"><i class="fas fa-coins"></i></div>
+                    <div class="kpi-card-info">
+                        <span>តម្លៃទំនិញក្នុងស្តុក (Valuation)</span>
+                        <strong><?= htmlspecialchars($currencySymbol, ENT_QUOTES, 'UTF-8'); ?><?= number_format((float)($kpiStats['total_value'] ?? 0), 2) ?></strong>
+                    </div>
+                </div>
             </section>
-        </div>
-    <?php else: ?>
-    <div class="admin-dashboard-container">
-        <!-- Top bar -->
-        <div class="admin-header-glass">
-            <div>
-                <span class="section-tag"><i class="fas fa-shield-alt"></i> Control Center</span>
-                <h2 style="font-size: 24px; font-weight: 800; color: #fff; margin-top: 4px;">គ្រប់គ្រងផលិតផល (Products)</h2>
-            </div>
-            <div class="admin-header-actions" style="display: flex; gap: 10px; flex-wrap: wrap;">
-                <a href="index.php?action=add" class="ios-glass-btn btn-aurora">
-                    <i class="fas fa-plus"></i> + បន្ថែមផលិតផលថ្មី
-                </a>
-                <a href="../home/index.php" class="ios-glass-btn">
-                    <i class="fas fa-external-link-alt"></i> មើលទំព័រមុខ
-                </a>
-                <div class="theme-mode-control theme-mode-admin">
-                    <label class="theme-mode-label" for="adminThemeModeSelect">Theme</label>
-                    <select id="adminThemeModeSelect" data-theme-mode aria-label="Color theme">
-                        <option value="system">System</option>
-                        <option value="light">Light</option>
-                        <option value="dark">Dark</option>
+
+            <!-- Search, Category & Sorting Toolbar -->
+            <section class="dash-toolbar-card">
+                <div class="dash-search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="adminProductSearch" placeholder="ស្វែងរកតាមឈ្មោះ, ID ឬប្រភេទផលិតផល..." autocomplete="off">
+                    <button type="button" id="clearAdminSearch" class="dash-search-clear"><i class="fas fa-times"></i></button>
+                </div>
+
+                <div class="dash-filters-group">
+                    <button type="button" class="filter-pill-btn active" data-filter-cat="all">ទាំងអស់ (<?= count($productsList) ?>)</button>
+                    <button type="button" class="filter-pill-btn" data-filter-cat="men">បុរស (<?= $catCounts['men'] ?>)</button>
+                    <button type="button" class="filter-pill-btn" data-filter-cat="women">នារី (<?= $catCounts['women'] ?>)</button>
+                    <button type="button" class="filter-pill-btn" data-filter-cat="accessories">គ្រឿងតុបតែង (<?= $catCounts['accessories'] ?>)</button>
+                    <button type="button" class="filter-pill-btn" data-filter-cat="digital">ឌីជីថល (<?= $catCounts['digital'] ?>)</button>
+                </div>
+
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <select id="adminStockStatusFilter" class="dash-sort-select" aria-label="Stock status">
+                        <option value="all">ស្តុកទាំងអស់ (All Stock)</option>
+                        <option value="in_stock">មានស្តុក (In Stock)</option>
+                        <option value="low_stock">ស្តុកតិច (Low Stock &le; 5)</option>
+                        <option value="out_of_stock">អស់ស្តុក (Out of Stock)</option>
+                    </select>
+
+                    <select id="adminSortSelect" class="dash-sort-select" aria-label="Sort products">
+                        <option value="newest">ថ្មីបំផុត (Newest ID)</option>
+                        <option value="oldest">ចាស់បំផុត (Oldest ID)</option>
+                        <option value="name_asc">ឈ្មោះ A &rarr; Z</option>
+                        <option value="price_asc">តម្លៃ៖ ទាប &rarr; ខ្ពស់</option>
+                        <option value="price_desc">តម្លៃ៖ ខ្ពស់ &rarr; ទាប</option>
+                        <option value="stock_desc">ស្តុក៖ ច្រើន &rarr; តិច</option>
                     </select>
                 </div>
-            </div>
-        </div>
-        <?php renderAdminPrimaryNavigation($currentAdmin, 'products'); ?>
-        <?php if ($error_msg !== ''): ?>
-            <div class="admin-error"><?= htmlspecialchars($error_msg, ENT_QUOTES, 'UTF-8') ?></div>
-        <?php endif; ?>
-
-        <?php if (adminHasPermission($currentAdmin, 'orders')): ?>
-        <?php
-        $todayUnits = (int) $todaySales['units'];
-        $yesterdayUnits = (int) $yesterdaySales['units'];
-        $unitTrendClass = $todayUnits > $yesterdayUnits ? 'trend-up' : ($todayUnits < $yesterdayUnits ? 'trend-down' : '');
-        if ($yesterdayUnits > 0) {
-            $unitTrend = sprintf('%s%.1f%% vs yesterday', $todayUnits > $yesterdayUnits ? '+' : '', (($todayUnits - $yesterdayUnits) / $yesterdayUnits) * 100);
-        } elseif ($todayUnits > 0) {
-            $unitTrend = 'Sales started today · 0 yesterday';
-        } else {
-            $unitTrend = 'No sales today or yesterday';
-        }
-        $knownProfit = (float) $todaySales['known_profit'];
-        ?>
-        <section class="analytics-grid" aria-label="Sales and inventory summary">
-            <article class="analytics-card">
-                <span>Units sold today</span>
-                <strong><?= $todayUnits ?></strong>
-                <small class="<?= $unitTrendClass ?>"><?= htmlspecialchars($unitTrend, ENT_QUOTES, 'UTF-8') ?> · yesterday: <?= $yesterdayUnits ?></small>
-            </article>
-            <article class="analytics-card">
-                <span>Net verified revenue today</span>
-                <strong><?= htmlspecialchars($currencySymbol, ENT_QUOTES, 'UTF-8') ?><?= number_format((float) $todaySales['revenue'], 2) ?></strong>
-                <small>Customer online orders</small>
-            </article>
-            <article class="analytics-card">
-                <span>Profit / loss today (known costs)</span>
-                <strong class="<?= $knownProfit >= 0 ? 'trend-up' : 'trend-down' ?>"><?= $knownProfit < 0 ? '-' : '' ?><?= htmlspecialchars($currencySymbol, ENT_QUOTES, 'UTF-8') ?><?= number_format(abs($knownProfit), 2) ?></strong>
-                <small><?= (int) $todaySales['unknown_cost_units'] ?> sale(s) excluded · cost not set</small>
-            </article>
-        </section>
-        <?php endif; ?>
-        <section class="analytics-grid" aria-label="Inventory summary">
-            <article class="analytics-card">
-                <span>Current units in stock</span>
-                <strong><?= $inventoryUnits ?></strong>
-                <small>Across all listed products</small>
-            </article>
-        </section>
-
-        <?php if ($lowStockResult->num_rows > 0): ?>
-            <section class="inventory-alert" role="status">
-                <h3><i class="fas fa-triangle-exclamation"></i> Low stock alert — <?= $lowStockResult->num_rows ?> product(s) need attention</h3>
-                <ul>
-                    <?php while ($lowStockProduct = $lowStockResult->fetch_assoc()): ?>
-                        <li>
-                            <?= htmlspecialchars($lowStockProduct['name'], ENT_QUOTES, 'UTF-8') ?>:
-                            <?= (int) $lowStockProduct['stock'] === 0 ? 'OUT OF STOCK' : (int) $lowStockProduct['stock'] . ' left (threshold ' . (int) $lowStockProduct['low_stock_threshold'] . ')' ?>
-                        </li>
-                    <?php endwhile; ?>
-                </ul>
             </section>
-        <?php endif; ?>
 
-        <?php if (adminHasPermission($currentAdmin, 'orders')): ?>
-        <section class="analytics-section">
-            <h3><i class="fas fa-receipt" style="color:var(--cyber-cyan);"></i> Recent online orders (latest 50)</h3>
-            <div class="admin-table-glass analytics-table-wrap">
-                <table>
-                    <thead><tr><th>Order</th><th>Payment</th><th>Buyer</th><th>Product</th><th>Price</th><th>Qty</th><th>Location</th><th>Phone</th><th>Order status</th><th>Payment status</th><th>Created</th></tr></thead>
-                    <tbody>
-                        <?php if ($salesHistory->num_rows > 0): ?>
-                            <?php while ($sale = $salesHistory->fetch_assoc()): ?>
-                                <tr>
-                                    <td><?= htmlspecialchars($sale['order_reference'] ?: 'Online order', ENT_QUOTES, 'UTF-8') ?></td>
-                                    <td><?= htmlspecialchars($sale['payment_method'] ? strtoupper($sale['payment_method']) : 'ONLINE', ENT_QUOTES, 'UTF-8') ?></td>
-                                    <td><?= htmlspecialchars($sale['customer_name'], ENT_QUOTES, 'UTF-8') ?></td>
-                                    <td><?= htmlspecialchars($sale['product_name'], ENT_QUOTES, 'UTF-8') ?></td>
-                                    <td><?= htmlspecialchars($currencySymbol, ENT_QUOTES, 'UTF-8') ?><?= number_format((float) $sale['unit_price'], 2) ?><?php if ((float) $sale['discount_amount'] > 0): ?><small><?= htmlspecialchars((string) $sale['coupon_code'], ENT_QUOTES, 'UTF-8') ?> · −<?= htmlspecialchars($currencySymbol, ENT_QUOTES, 'UTF-8') ?><?= number_format((float) $sale['discount_amount'], 2) ?></small><?php endif; ?></td>
-                                    <td><?= (int) $sale['quantity'] ?></td>
-                                    <td><?= htmlspecialchars($sale['location'], ENT_QUOTES, 'UTF-8') ?></td>
-                                    <td><?= htmlspecialchars($sale['phone_number'], ENT_QUOTES, 'UTF-8') ?></td>
-                                    <td><?= htmlspecialchars($sale['status'], ENT_QUOTES, 'UTF-8') ?></td>
-                                    <td><?= htmlspecialchars(ucwords(str_replace('_', ' ', $sale['payment_status'])), ENT_QUOTES, 'UTF-8') ?></td>
-                                    <td><?= htmlspecialchars($sale['created_at'], ENT_QUOTES, 'UTF-8') ?></td>
-                                </tr>
-                            <?php endwhile; ?>
-                        <?php else: ?>
-                            <tr><td colspan="11">No accepted orders have been recorded yet.</td></tr>
-                        <?php endif; ?>
-                    </tbody>
-                </table>
-            </div>
-        </section>
-        <?php endif; ?>
-
-        <section class="analytics-section">
-            <h3><i class="fas fa-clock-rotate-left" style="color:var(--cyber-purple);"></i> Product activity (latest 50)</h3>
-            <div class="admin-table-glass analytics-table-wrap">
-                <table>
-                    <thead><tr><th>Action</th><th>Product</th><th>Changed fields</th><th>Who</th><th>When</th></tr></thead>
-                    <tbody>
-                        <?php if ($activityHistory->num_rows > 0): ?>
-                            <?php while ($activity = $activityHistory->fetch_assoc()): ?>
+            <!-- Product Table Card -->
+            <section class="dash-table-card">
+                <div class="table-responsive">
+                    <table class="dash-table" id="adminProductsTable">
+                        <thead>
+                            <tr>
+                                <th style="width: 50px;">ID</th>
+                                <th>ផលិតផល (Product Info)</th>
+                                <th style="width: 140px;">តម្លៃលក់ &amp; ដើម</th>
+                                <th style="width: 180px;">ចំនួនស្តុក (Stock Level)</th>
+                                <th style="width: 130px; text-align: right;">សកម្មភាព (Actions)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="adminProductsTableBody">
+                            <?php foreach ($productsList as $p): ?>
                                 <?php
-                                $oldActivityValues = $activity['old_values'] === null ? null : json_decode($activity['old_values'], true);
-                                $newActivityValues = $activity['new_values'] === null ? null : json_decode($activity['new_values'], true);
-                                $changedFields = [];
-                                if (is_array($oldActivityValues) && is_array($newActivityValues)) {
-                                    foreach (['name', 'description', 'price', 'cost_price', 'stock', 'image'] as $field) {
-                                        if (($oldActivityValues[$field] ?? null) !== ($newActivityValues[$field] ?? null)) {
-                                            $changedFields[] = $field;
-                                        }
-                                    }
+                                $pId = (int)$p['id'];
+                                $pName = htmlspecialchars($p['name'], ENT_QUOTES, 'UTF-8');
+                                $pCategory = htmlspecialchars($p['category'] ?: 'men', ENT_QUOTES, 'UTF-8');
+                                $pDesc = htmlspecialchars($p['description'] ?? '', ENT_QUOTES, 'UTF-8');
+                                $pPrice = (float)$p['price'];
+                                $pCost = $p['cost_price'] !== null ? (float)$p['cost_price'] : null;
+                                $pStock = (int)$p['stock'];
+                                $pThreshold = (int)$p['low_stock_threshold'];
+                                $pImg = !empty($p['image'])
+                                    ? (preg_match('~^https?://~i', $p['image']) ? $p['image'] : '../' . $p['image'])
+                                    : '../home/logo/logome.png';
+
+                                $stockStatusClass = $pStock === 0 ? 'status-empty' : ($pStock <= $pThreshold ? 'status-low' : 'status-ok');
+                                $stockStatusText = $pStock === 0 ? 'អស់ស្តុក (0)' : ($pStock <= $pThreshold ? "ស្តុកតិច ({$pStock})" : "មានស្តុក ({$pStock})");
+
+                                $pOriginal = isset($p['original_price']) && is_numeric($p['original_price']) ? (float)$p['original_price'] : null;
+                                $pDiscount = (int)($p['discount_percent'] ?? 0);
+                                if ($pOriginal !== null && $pOriginal > $pPrice && $pDiscount === 0) {
+                                    $pDiscount = (int) round((($pOriginal - $pPrice) / $pOriginal) * 100);
+                                }
+
+                                $marginHtml = '';
+                                if ($pCost !== null && $pPrice > 0) {
+                                    $margin = round((($pPrice - $pCost) / $pPrice) * 100, 1);
+                                    $marginHtml = "<span class=\"margin-badge\">+{$margin}% ចំណេញ</span>";
                                 }
                                 ?>
-                                <tr>
-                                    <td><?= htmlspecialchars(ucfirst($activity['action']), ENT_QUOTES, 'UTF-8') ?></td>
-                                    <td><?= htmlspecialchars($activity['product_name'], ENT_QUOTES, 'UTF-8') ?></td>
-                                    <td><?= $changedFields ? htmlspecialchars(implode(', ', $changedFields), ENT_QUOTES, 'UTF-8') : '—' ?></td>
-                                    <td><?= htmlspecialchars($activity['actor'], ENT_QUOTES, 'UTF-8') ?></td>
-                                    <td><?= htmlspecialchars($activity['created_at'], ENT_QUOTES, 'UTF-8') ?></td>
-                                </tr>
-                            <?php endwhile; ?>
-                        <?php else: ?>
-                            <tr><td colspan="5">No product activity has been recorded yet.</td></tr>
-                        <?php endif; ?>
-                    </tbody>
-                </table>
-            </div>
-        </section>
-
-        <!-- Table -->
-        <div class="admin-table-glass">
-            <table>
-                <thead>
-                    <tr>
-                        <th style="width: 60px;">ល.រ</th>
-                        <th style="width: 80px;">រូបភាព</th>
-                        <th>ឈ្មោះផលិតផល</th>
-                        <th>ព័ត៌មានលម្អិត</th>
-                        <th>តម្លៃ</th>
-                        <th>Cost</th>
-                        <th>ស្តុក (Stock)</th>
-                        <th style="width: 180px; text-align: center;">សកម្មភាព</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php if ($result && $result->num_rows > 0): ?>
-                        <?php while ($row = $result->fetch_assoc()): ?>
-                            <tr>
-                                <td style="font-weight: 700; color: #00f2fe;"><?= $row['id'] ?></td>
-                                <td>
-                                    <?php if (!empty($row['image'])): ?>
-                                        <img src="<?= htmlspecialchars(preg_match('~^https?://~i', $row['image']) ? $row['image'] : '../' . $row['image'], ENT_QUOTES, 'UTF-8') ?>" class="app-icon-img" alt="<?= htmlspecialchars($row['name'], ENT_QUOTES, 'UTF-8') ?>">
-                                    <?php else: ?>
-                                        <div class="app-icon-img" style="display:flex;align-items:center;justify-content:center;color:#666;">
-                                            <i class="fas fa-image"></i>
+                                <tr class="prod-table-row" 
+                                    data-id="<?= $pId ?>"
+                                    data-name="<?= strtolower($pName) ?>"
+                                    data-category="<?= strtolower($pCategory) ?>"
+                                    data-price="<?= $pPrice ?>"
+                                    data-original-price="<?= $pOriginal !== null ? $pOriginal : '' ?>"
+                                    data-discount-percent="<?= $pDiscount ?>"
+                                    data-stock="<?= $pStock ?>"
+                                    data-threshold="<?= $pThreshold ?>">
+                                    <td style="font-weight: 700; color: #887d72;">#<?= $pId ?></td>
+                                    <td>
+                                        <div class="prod-cell">
+                                            <div class="prod-thumb-wrap">
+                                                <img src="<?= htmlspecialchars($pImg, ENT_QUOTES, 'UTF-8') ?>" alt="<?= $pName ?>" onerror="this.src='../home/logo/logome.png'">
+                                            </div>
+                                            <div>
+                                                <div class="prod-meta-title">
+                                                    <span><?= $pName ?></span>
+                                                    <span class="prod-cat-badge"><?= strtoupper($pCategory) ?></span>
+                                                    <?php if ($pOriginal !== null && $pOriginal > $pPrice): ?>
+                                                        <span style="background: #e11d48; color: #fff; font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 4px; margin-left: 4px;"><i class="fas fa-tag"></i> -<?= $pDiscount ?>%</span>
+                                                    <?php endif; ?>
+                                                </div>
+                                                <div class="prod-meta-desc"><?= $pDesc ?></div>
+                                            </div>
                                         </div>
-                                    <?php endif; ?>
-                                </td>
-                                <td style="font-weight: 700; color: #fff;"><?= htmlspecialchars($row['name']) ?></td>
-                                <td style="color: var(--text-muted); font-size: 13px;"><?= htmlspecialchars($row['description'] ?? '') ?></td>
-                                <td>
-                                    <span style="display:inline-block; padding: 4px 10px; border-radius: 9999px; background: rgba(0,245,160,0.15); border: 1px solid rgba(0,245,160,0.3); color: #00f5a0; font-weight: 700;">
-                                        <?= htmlspecialchars($currencySymbol, ENT_QUOTES, 'UTF-8') ?><?= number_format($row['price'], 2) ?>
-                                    </span>
-                                </td>
-                                <td><?= $row['cost_price'] === null ? 'Not set' : htmlspecialchars($currencySymbol, ENT_QUOTES, 'UTF-8') . number_format((float) $row['cost_price'], 2) ?></td>
-                                <td>
-                                    <?php
-                                    $stockAmount = (int) $row['stock'];
-                                    $stockClass = $stockAmount === 0 ? 'is-empty' : ($stockAmount <= (int) $row['low_stock_threshold'] ? 'is-low' : '');
-                                    ?>
-                                    <span class="stock-badge <?= $stockClass ?>">
-                                        <?= $stockAmount === 0 ? 'OUT OF STOCK' : $stockAmount ?>
-                                    </span>
-                                </td>
-                                <td style="text-align: center;">
-                                    <a class="btn-table btn-edit" href="index.php?action=edit&amp;id=<?= (int) $row['id'] ?>">
-                                        <i class="fas fa-pen"></i> កែប្រែ
-                                    </a>
-                                    <a class="btn-table btn-delete" href="index.php?action=delete&amp;id=<?= (int) $row['id'] ?>" data-delete-product="<?= htmlspecialchars($row['name'], ENT_QUOTES, 'UTF-8') ?>" data-product-id="<?= (int) $row['id'] ?>">
-                                        <i class="fas fa-trash"></i> លុប
-                                    </a>
-                                </td>
-                            </tr>
-                        <?php endwhile; ?>
-                    <?php else: ?>
-                        <tr>
-                            <td colspan="8" style="text-align: center; padding: 40px; color: var(--text-muted);">
-                                មិនទាន់មានផលិតផលនៅឡើយទេ (No products found)
-                            </td>
-                        </tr>
-                    <?php endif; ?>
-                </tbody>
-            </table>
+                                    </td>
+                                    <td>
+                                        <div class="price-chip">
+                                            <?= $currencySymbol ?><?= number_format($pPrice, 2) ?>
+                                            <?php if ($pOriginal !== null && $pOriginal > $pPrice): ?>
+                                                <span style="font-size: 11px; text-decoration: line-through; opacity: 0.65; margin-left: 4px;"><?= $currencySymbol ?><?= number_format($pOriginal, 2) ?></span>
+                                            <?php endif; ?>
+                                        </div>
+                                        <span class="cost-chip">ដើម: <?= $pCost !== null ? $currencySymbol . number_format($pCost, 2) : 'មិនបានកំណត់' ?></span>
+                                        <?= $marginHtml ?>
+                                    </td>
+                                    <td>
+                                        <div class="stock-control-cell">
+                                            <span class="stock-status-pill <?= $stockStatusClass ?>" id="stockBadge-<?= $pId ?>">
+                                                <?= $stockStatusText ?>
+                                            </span>
+                                            <div class="stock-quick-stepper">
+                                                <button type="button" class="quick-stock-btn" data-id="<?= $pId ?>" data-delta="-1" title="បន្ថយស្តុក 1">&minus;</button>
+                                                <button type="button" class="quick-stock-btn" data-id="<?= $pId ?>" data-delta="1" title="បន្ថែមស្តុក 1">&plus;</button>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="table-actions-cell">
+                                            <button type="button" class="btn-action-icon btn-edit" data-edit-id="<?= $pId ?>" title="កែប្រែព័ត៌មាន">
+                                                <i class="fas fa-pen"></i>
+                                            </button>
+                                            <button type="button" class="btn-action-icon btn-stock" data-adjust-id="<?= $pId ?>" data-stock-val="<?= $pStock ?>" data-name="<?= $pName ?>" title="កែប្រែចំនួនស្តុក">
+                                                <i class="fas fa-cubes-stacked"></i>
+                                            </button>
+                                            <button type="button" class="btn-action-icon btn-del" data-delete-id="<?= $pId ?>" data-name="<?= $pName ?>" title="លុបផលិតផល">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+            <?php endif; ?>
+        </main>
+    </div>
+
+    <!-- ============================================================== -->
+    <!-- ADD / EDIT PRODUCT MODAL (SMOOTH & CLEAN)                       -->
+    <!-- ============================================================== -->
+    <div class="dash-modal-overlay" id="productModal">
+        <div class="dash-modal-card" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+            <div class="dash-modal-header">
+                <h2 id="modalTitle"><i class="fas fa-plus-circle" style="color: var(--admin-accent);"></i> បន្ថែមផលិតផលថ្មី</h2>
+                <button type="button" class="dash-modal-close" data-close-modal aria-label="បិទ"><i class="fas fa-xmark"></i></button>
+            </div>
+
+            <form id="productForm" action="index.php" method="POST" enctype="multipart/form-data">
+                <input type="hidden" name="action" id="formAction" value="add">
+                <input type="hidden" name="id" id="formProductId" value="">
+                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
+                <input type="hidden" name="is_ajax" value="1">
+
+                <!-- Link Auto-fill Helper -->
+                <div class="form-field-group" id="autoFillGroup">
+                    <label><i class="fas fa-wand-magic-sparkles" style="color: var(--admin-accent);"></i> ស្វែងរកបំពេញស្វ័យប្រវត្តិតាម Link (Auto-fill)</label>
+                    <div style="display: flex; gap: 8px;">
+                        <input type="url" id="linkScrapeInput" class="form-input-modern" placeholder="https://example.com/product/...">
+                        <button type="button" id="btnScrapeProduct" class="btn-modern btn-outline-action" style="white-space: nowrap;">
+                            <i class="fas fa-download"></i> ទាញយកទិន្នន័យ
+                        </button>
+                    </div>
+                    <span id="scrapeStatus" style="display:none; font-size:12px; margin-top:4px;"></span>
+                </div>
+
+                <div class="form-grid-row">
+                    <div class="form-field-group">
+                        <label for="inputName">ឈ្មោះផលិតផល (Product Name) *</label>
+                        <input type="text" id="inputName" name="name" class="form-input-modern" placeholder="ឧ. Men Classic T-Shirt" required>
+                    </div>
+                    <div class="form-field-group">
+                        <label for="inputCategory">ប្រភេទផលិតផល (Category) *</label>
+                        <select id="inputCategory" name="category" class="form-input-modern" required>
+                            <option value="men">បុរស (Men's Clothing)</option>
+                            <option value="women">នារី (Women's Clothing)</option>
+                            <option value="accessories">គ្រឿងតុបតែង &amp; ស្បែកជើង (Accessories)</option>
+                            <option value="digital">សេវាកម្ម &amp; ឌីជីថល (Digital)</option>
+                            <option value="fashion">ម៉ូដទូទៅ (Fashion General)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-field-group">
+                    <label for="inputDescription">ព័ត៌មានលម្អិត (Description)</label>
+                    <textarea id="inputDescription" name="description" class="form-input-modern" placeholder="ពិពណ៌នាពីសាច់ក្រណាត់ ទំហំ និងគុណភាពផលិតផល..."></textarea>
+                </div>
+
+                <div class="form-grid-row">
+                    <div class="form-field-group">
+                        <label for="inputPrice">តម្លៃលក់បច្ចុប្បន្ន $ (Sale / Current Price) *</label>
+                        <input type="number" step="0.01" min="0" id="inputPrice" name="price" class="form-input-modern" placeholder="12.00" required>
+                    </div>
+                    <div class="form-field-group">
+                        <label for="inputCostPrice">តម្លៃដើមទិញចូល $ (Cost Price)</label>
+                        <input type="number" step="0.01" min="0" id="inputCostPrice" name="cost_price" class="form-input-modern" placeholder="6.00">
+                    </div>
+                </div>
+
+                <!-- Discount & Promotion Configuration -->
+                <div style="background: #faf8f5; border: 1px dashed #ded5cb; border-radius: 8px; padding: 14px 16px; margin-bottom: 16px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <span style="font-weight: 700; font-size: 13.5px; color: #203f3a;"><i class="fas fa-tags" style="color: #e11d48; margin-right: 6px;"></i> ការបញ្ចុះតម្លៃ (Discount & Promotion)</span>
+                        <span id="discountLiveBadge" style="display: none; background: #e11d48; color: #fff; font-size: 11px; padding: 2px 8px; border-radius: 12px; font-weight: 800;">-0% OFF</span>
+                    </div>
+                    <div class="form-grid-row" style="margin-bottom: 0;">
+                        <div class="form-field-group" style="margin-bottom: 0;">
+                            <label for="inputOriginalPrice" style="font-size: 12.5px; color: #554d45;">តម្លៃដើមមុនបញ្ចុះ $ (Original Price)</label>
+                            <input type="number" step="0.01" min="0" id="inputOriginalPrice" name="original_price" class="form-input-modern" placeholder="ឧ. 20.00">
+                        </div>
+                        <div class="form-field-group" style="margin-bottom: 0;">
+                            <label for="inputDiscountPercent" style="font-size: 12.5px; color: #554d45;">ភាគរយបញ្ចុះ % (Discount %)</label>
+                            <input type="number" step="1" min="0" max="99" id="inputDiscountPercent" name="discount_percent" class="form-input-modern" placeholder="ឧ. 25">
+                        </div>
+                    </div>
+                    <small style="display: block; margin-top: 8px; font-size: 11.5px; color: #887d72;">
+                        <i class="fas fa-circle-info"></i> បញ្ចូលតម្លៃដើម ឬភាគរយបញ្ចុះ ប្រព័ន្ធនឹងគណនាបញ្ចុះតម្លៃ និងបង្ហាញលើ Card ផលិតផលដោយស្វ័យប្រវត្តិ។
+                    </small>
+                </div>
+
+                <div class="form-grid-row">
+                    <div class="form-field-group">
+                        <label for="inputStock">ចំនួនស្តុក (Stock Quantity) *</label>
+                        <input type="number" step="1" min="0" id="inputStock" name="stock" class="form-input-modern" value="50" required>
+                    </div>
+                    <div class="form-field-group">
+                        <label for="inputThreshold">កម្រិតស្តុកតិច (Low Threshold)</label>
+                        <input type="number" step="1" min="1" id="inputThreshold" name="low_stock_threshold" class="form-input-modern" value="5">
+                    </div>
+                </div>
+
+                <!-- Product Image Selection -->
+                <div class="form-field-group">
+                    <label>រូបភាពផលិតផល (Product Image)</label>
+                    <div style="display: flex; gap: 16px; margin-bottom: 8px;">
+                        <label style="font-weight: normal; cursor: pointer;">
+                            <input type="radio" name="image_source" value="url" checked id="radioSourceUrl"> ប្រើ Link រូបភាព (URL)
+                        </label>
+                        <label style="font-weight: normal; cursor: pointer;">
+                            <input type="radio" name="image_source" value="upload" id="radioSourceUpload"> បង្ហោះរូបភាពពីកុំព្យូទ័រ (File Upload)
+                        </label>
+                    </div>
+
+                    <div id="urlInputContainer">
+                        <input type="url" id="inputImageUrl" name="image_url" class="form-input-modern" placeholder="https://images.unsplash.com/photo-...">
+                    </div>
+
+                    <div id="fileUploadContainer" style="display: none;">
+                        <input type="file" id="inputFileUpload" name="icon" class="form-input-modern" accept="image/jpeg,image/png,image/webp,image/gif">
+                    </div>
+
+                    <div class="image-preview-box" id="imgPreviewWrapper">
+                        <img id="imgPreviewThumb" src="../home/logo/logome.png" alt="Preview">
+                        <span id="imgPreviewLabel" style="font-size: 12px; color: var(--admin-text-muted);">រូបភាព preview នឹងបង្ហាញទីនេះ</span>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 24px;">
+                    <button type="button" class="btn-modern btn-outline-action" data-close-modal>បោះបង់ (Cancel)</button>
+                    <button type="submit" id="btnSaveProduct" class="btn-modern btn-primary-action">
+                        <i class="fas fa-check"></i> រក្សាទុក (Save Product)
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
-    <div class="delete-confirmation-backdrop" id="deleteConfirmation" hidden>
-        <section class="delete-confirmation-dialog" role="alertdialog" aria-modal="true" aria-labelledby="deleteConfirmationTitle" aria-describedby="deleteConfirmationMessage" tabindex="-1">
-            <div class="delete-warning-icon"><i class="fas fa-trash-can"></i></div>
-            <h2 id="deleteConfirmationTitle">បញ្ជាក់ការលុបផលិតផល</h2>
-            <p id="deleteConfirmationMessage">តើអ្នកពិតជាចង់លុបផលិតផលនេះមែនទេ? សកម្មភាពនេះមិនអាចត្រឡប់វិញបានទេ។</p>
-            <span class="delete-product-name" id="deleteProductName"></span>
-            <div class="delete-confirmation-actions">
-                <button type="button" class="delete-cancel-button" id="cancelProductDelete">បោះបង់</button>
-                <button type="button" class="delete-confirm-button" id="confirmProductDelete"><i class="fas fa-trash"></i> លុបផលិតផល</button>
+
+    <!-- ============================================================== -->
+    <!-- QUICK STOCK ADJUSTMENT MODAL                                    -->
+    <!-- ============================================================== -->
+    <div class="dash-modal-overlay" id="stockAdjustModal">
+        <div class="dash-modal-card" style="max-width: 440px;" role="dialog" aria-modal="true">
+            <div class="dash-modal-header">
+                <h2><i class="fas fa-cubes-stacked" style="color: var(--admin-accent);"></i> កែប្រែចំនួនស្តុក</h2>
+                <button type="button" class="dash-modal-close" data-close-modal><i class="fas fa-xmark"></i></button>
             </div>
-        </section>
+            <form id="stockAdjustForm">
+                <input type="hidden" id="adjustProdId" name="id" value="">
+                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
+                <div style="margin-bottom: 16px;">
+                    <strong id="adjustProdName" style="font-size: 16px; color: var(--admin-primary); display:block; margin-bottom: 4px;"></strong>
+                    <span style="font-size: 13px; color: var(--admin-text-muted);">ស្តុកបច្ចុប្បន្ន: <strong id="adjustCurrentStockVal" style="color:var(--admin-text-main);">0</strong> គ្រឿង</span>
+                </div>
+
+                <div class="form-field-group">
+                    <label for="adjustNewStock">ចំនួនស្តុកថ្មី (New Stock Total)</label>
+                    <input type="number" min="0" id="adjustNewStock" name="new_stock" class="form-input-modern" required>
+                </div>
+
+                <div style="display: flex; gap: 6px; margin-bottom: 16px;">
+                    <button type="button" class="filter-pill-btn adjust-chip" data-add="5">+5</button>
+                    <button type="button" class="filter-pill-btn adjust-chip" data-add="10">+10</button>
+                    <button type="button" class="filter-pill-btn adjust-chip" data-add="25">+25</button>
+                    <button type="button" class="filter-pill-btn adjust-chip" data-add="-5">-5</button>
+                    <button type="button" class="filter-pill-btn adjust-chip" data-add="-10">-10</button>
+                </div>
+
+                <div class="form-field-group">
+                    <label for="adjustReason">មូលហេតុនៃការកែប្រែ (Audit Reason)</label>
+                    <input type="text" id="adjustReason" name="reason" class="form-input-modern" value="កែប្រែស្តុកដោយ Admin" placeholder="ឧ. ទំនិញចូលថ្មីពីអ្នកផ្គត់ផ្គង់">
+                </div>
+
+                <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
+                    <button type="button" class="btn-modern btn-outline-action" data-close-modal>បោះបង់</button>
+                    <button type="submit" class="btn-modern btn-primary-action"><i class="fas fa-save"></i> កែប្រែស្តុក</button>
+                </div>
+            </form>
+        </div>
     </div>
-    <form action="index.php" method="POST" id="deleteProductForm" hidden>
-        <input type="hidden" name="action" value="delete">
-        <input type="hidden" name="id" id="deleteProductId">
-        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
-    </form>
+
+    <!-- ============================================================== -->
+    <!-- DELETE CONFIRMATION MODAL                                      -->
+    <!-- ============================================================== -->
+    <div class="dash-modal-overlay" id="deleteModal">
+        <div class="dash-modal-card" style="max-width: 420px; text-align: center;" role="dialog" aria-modal="true">
+            <div style="width: 54px; height: 54px; border-radius: 50%; background: #fee2e2; color: #dc2626; display: grid; place-items: center; font-size: 24px; margin: 0 auto 16px;">
+                <i class="fas fa-trash-can"></i>
+            </div>
+            <h2 style="font-size: 20px; margin: 0 0 8px; color: var(--admin-text-main);">បញ្ជាក់ការលុបផលិតផល</h2>
+            <p style="font-size: 13.5px; color: var(--admin-text-muted); margin: 0 0 16px;">
+                តើអ្នកពិតជាចង់លុបផលិតផលនេះមែនទេ? សកម្មភាពនេះមិនអាចត្រឡប់វិញបានទេ។
+            </p>
+            <strong id="deleteProdNameDisplay" style="display:block; font-size: 15px; color: var(--admin-primary); margin-bottom: 22px;"></strong>
+
+            <form id="deleteProductForm">
+                <input type="hidden" id="deleteTargetId" name="id" value="">
+                <input type="hidden" name="action" value="delete">
+                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
+                <input type="hidden" name="is_ajax" value="1">
+                <div style="display: flex; gap: 10px; justify-content: center;">
+                    <button type="button" class="btn-modern btn-outline-action" data-close-modal>បោះបង់</button>
+                    <button type="submit" class="btn-modern" style="background: #dc2626; color: #fff;">
+                        <i class="fas fa-trash"></i> លុបផលិតផល
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div class="admin-toast-container" id="toastContainer"></div>
+
+    <!-- Interactive Client-Side Engine -->
     <script>
         (() => {
-            const modal = document.getElementById('deleteConfirmation');
-            const dialog = modal.querySelector('[role="alertdialog"]');
-            const productName = document.getElementById('deleteProductName');
-            const cancelButton = document.getElementById('cancelProductDelete');
-            const confirmButton = document.getElementById('confirmProductDelete');
-            const deleteForm = document.getElementById('deleteProductForm');
-            const deleteProductId = document.getElementById('deleteProductId');
-            let previouslyFocusedElement = null;
+            const csrfToken = <?= json_encode($csrfToken) ?>;
+            const currencySymbol = <?= json_encode($currencySymbol) ?>;
 
-            const closeModal = () => {
-                modal.hidden = true;
-                if (previouslyFocusedElement) previouslyFocusedElement.focus();
-            };
+            // Toast feedback helper
+            function showToast(message, isError = false) {
+                const container = document.getElementById('toastContainer');
+                const toast = document.createElement('div');
+                toast.className = 'admin-toast' + (isError ? ' toast-error' : '');
+                toast.innerHTML = `<i class="fas ${isError ? 'fa-circle-exclamation' : 'fa-circle-check'}"></i> <span>${message}</span>`;
+                container.appendChild(toast);
+                setTimeout(() => {
+                    toast.style.transition = 'opacity 0.3s, transform 0.3s';
+                    toast.style.opacity = '0';
+                    toast.style.transform = 'translateY(10px)';
+                    setTimeout(() => toast.remove(), 300);
+                }, 3500);
+            }
 
-            document.querySelectorAll('[data-delete-product]').forEach((link) => {
-                link.addEventListener('click', (event) => {
-                    event.preventDefault();
-                    deleteProductId.value = link.dataset.productId;
-                    previouslyFocusedElement = link;
-                    productName.textContent = link.dataset.deleteProduct;
-                    modal.hidden = false;
-                    cancelButton.focus();
+            // ---------------------------------------------------------
+            // Instant Search, Category Filter & Sorting
+            // ---------------------------------------------------------
+            const searchInput = document.getElementById('adminProductSearch');
+            const clearSearchBtn = document.getElementById('clearAdminSearch');
+            const catFilterBtns = document.querySelectorAll('.filter-pill-btn[data-filter-cat]');
+            const stockFilterSelect = document.getElementById('adminStockStatusFilter');
+            const sortSelect = document.getElementById('adminSortSelect');
+            const tableBody = document.getElementById('adminProductsTableBody');
+            const allRows = Array.from(document.querySelectorAll('.prod-table-row'));
+
+            function applyFilters() {
+                const query = searchInput.value.trim().toLowerCase();
+                clearSearchBtn.style.display = query !== '' ? 'block' : 'none';
+
+                const activeCatBtn = document.querySelector('.filter-pill-btn.active[data-filter-cat]');
+                const activeCat = activeCatBtn ? activeCatBtn.dataset.filterCat : 'all';
+                const stockFilter = stockFilterSelect.value;
+
+                allRows.forEach(row => {
+                    const name = row.dataset.name || '';
+                    const id = row.dataset.id || '';
+                    const cat = row.dataset.category || '';
+                    const stock = parseInt(row.dataset.stock, 10) || 0;
+                    const threshold = parseInt(row.dataset.threshold, 10) || 5;
+
+                    const matchSearch = query === '' || name.includes(query) || id === query || cat.includes(query);
+                    const matchCat = activeCat === 'all' || cat === activeCat;
+
+                    let matchStock = true;
+                    if (stockFilter === 'in_stock') matchStock = stock > threshold;
+                    else if (stockFilter === 'low_stock') matchStock = stock > 0 && stock <= threshold;
+                    else if (stockFilter === 'out_of_stock') matchStock = stock === 0;
+
+                    if (matchSearch && matchCat && matchStock) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+
+                applySorting();
+            }
+
+            function applySorting() {
+                const sortVal = sortSelect.value;
+                const rows = Array.from(tableBody.querySelectorAll('.prod-table-row'));
+                rows.sort((a, b) => {
+                    const idA = parseInt(a.dataset.id, 10);
+                    const idB = parseInt(b.dataset.id, 10);
+                    const priceA = parseFloat(a.dataset.price);
+                    const priceB = parseFloat(b.dataset.price);
+                    const stockA = parseInt(a.dataset.stock, 10);
+                    const stockB = parseInt(b.dataset.stock, 10);
+                    const nameA = a.dataset.name;
+                    const nameB = b.dataset.name;
+
+                    if (sortVal === 'newest') return idB - idA;
+                    if (sortVal === 'oldest') return idA - idB;
+                    if (sortVal === 'price_asc') return priceA - priceB;
+                    if (sortVal === 'price_desc') return priceB - priceA;
+                    if (sortVal === 'stock_desc') return stockB - stockA;
+                    if (sortVal === 'name_asc') return nameA.localeCompare(nameB);
+                    return 0;
+                });
+                rows.forEach(r => tableBody.appendChild(r));
+            }
+
+            if (searchInput) searchInput.addEventListener('input', applyFilters);
+            if (clearSearchBtn) {
+                clearSearchBtn.addEventListener('click', () => {
+                    searchInput.value = '';
+                    applyFilters();
+                    searchInput.focus();
+                });
+            }
+
+            catFilterBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    catFilterBtns.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    applyFilters();
                 });
             });
 
-            cancelButton.addEventListener('click', closeModal);
-            confirmButton.addEventListener('click', () => {
-                deleteForm.submit();
-            });
-            modal.addEventListener('click', (event) => {
-                if (event.target === modal) closeModal();
-            });
-            document.addEventListener('keydown', (event) => {
-                if (event.key === 'Escape' && !modal.hidden) closeModal();
-            });
-        })();
-    </script>
-    <?php endif; ?>
-    <?php if ($action === 'add' || $action === 'edit'): ?>
-        <script>
-            const fileInput = document.getElementById("iconFileInput");
-            const previewWrap = document.getElementById("filePreviewWrap");
-            const nameLabel = document.getElementById("fileNameLabel");
-            const uploadPanel = document.getElementById("imageUploadPanel");
-            const urlPanel = document.getElementById("imageUrlPanel");
-            const urlInput = document.getElementById("imageUrlInput");
-            const imageSourceOptions = document.querySelectorAll('input[name="image_source"]');
+            if (stockFilterSelect) stockFilterSelect.addEventListener('change', applyFilters);
+            if (sortSelect) sortSelect.addEventListener('change', applySorting);
 
-            const updateImageSource = () => {
-                const selectedSource = document.querySelector('input[name="image_source"]:checked').value;
-                const useUrl = selectedSource === 'url';
-                uploadPanel.hidden = useUrl;
-                urlPanel.hidden = !useUrl;
-                fileInput.required = !useUrl && <?= $isEditing ? 'false' : 'true' ?>;
-                urlInput.required = useUrl && <?= $isEditing ? 'false' : 'true' ?>;
-            };
+            // KPI Low Stock Card Click to filter
+            const kpiLowCard = document.getElementById('kpiCardLowStock');
+            if (kpiLowCard) {
+                kpiLowCard.addEventListener('click', () => {
+                    stockFilterSelect.value = 'low_stock';
+                    applyFilters();
+                });
+            }
 
-            imageSourceOptions.forEach((option) => option.addEventListener('change', updateImageSource));
-            updateImageSource();
+            // ---------------------------------------------------------
+            // Modal Open / Close Helpers
+            // ---------------------------------------------------------
+            const productModal = document.getElementById('productModal');
+            const stockAdjustModal = document.getElementById('stockAdjustModal');
+            const deleteModal = document.getElementById('deleteModal');
 
-            fileInput.addEventListener("change", function() {
-                if (this.files && this.files[0]) {
-                    nameLabel.textContent = this.files[0].name;
-                    previewWrap.style.display = "inline-flex";
+            function openModal(modalEl) {
+                modalEl.classList.add('open');
+                document.body.style.overflow = 'hidden';
+            }
+
+            function closeModal(modalEl) {
+                modalEl.classList.remove('open');
+                document.body.style.overflow = '';
+            }
+
+            document.querySelectorAll('[data-close-modal]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    closeModal(productModal);
+                    closeModal(stockAdjustModal);
+                    closeModal(deleteModal);
+                });
+            });
+
+            [productModal, stockAdjustModal, deleteModal].forEach(modalEl => {
+                modalEl.addEventListener('click', (e) => {
+                    if (e.target === modalEl) closeModal(modalEl);
+                });
+            });
+
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    closeModal(productModal);
+                    closeModal(stockAdjustModal);
+                    closeModal(deleteModal);
                 }
             });
 
-            // ── Product link auto-fill ─────────────────────────────────────
-            const fetchBtn    = document.getElementById('fetchProductBtn');
-            const linkInput   = document.getElementById('productLinkInput');
-            const fetchStatus = document.getElementById('fetchStatus');
+            // ---------------------------------------------------------
+            // Add / Edit Product Modal Handlers
+            // ---------------------------------------------------------
+            const openAddBtn = document.getElementById('openAddProductModal');
+            const productForm = document.getElementById('productForm');
+            const modalTitle = document.getElementById('modalTitle');
+            const formAction = document.getElementById('formAction');
+            const formProductId = document.getElementById('formProductId');
+            const inputName = document.getElementById('inputName');
+            const inputCategory = document.getElementById('inputCategory');
+            const inputDescription = document.getElementById('inputDescription');
+            const inputPrice = document.getElementById('inputPrice');
+            const inputOriginalPrice = document.getElementById('inputOriginalPrice');
+            const inputDiscountPercent = document.getElementById('inputDiscountPercent');
+            const discountLiveBadge = document.getElementById('discountLiveBadge');
+            const inputCostPrice = document.getElementById('inputCostPrice');
 
-            if (fetchBtn && linkInput) {
-                fetchBtn.addEventListener('click', async () => {
-                    const url = linkInput.value.trim();
-                    if (!url) {
-                        showStatus('សូមបញ្ចូល link ផលិតផលជាមុនសិន', 'error');
-                        return;
-                    }
-                    if (!/^https?:\/\//i.test(url)) {
-                        showStatus('Link ត្រូវចាប់ផ្តើមដោយ http:// ឬ https://', 'error');
-                        return;
-                    }
+            function syncDiscountCalculation(source) {
+                const price = parseFloat(inputPrice.value) || 0;
+                const orig = parseFloat(inputOriginalPrice.value) || 0;
+                const disc = parseInt(inputDiscountPercent.value, 10) || 0;
 
-                    fetchBtn.disabled = true;
-                    fetchBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading...';
-                    showStatus('កំពុង fetch ទិន្នន័យ...', 'info');
+                if (source === 'orig' || source === 'price') {
+                    if (orig > price && price > 0) {
+                        const calculatedPercent = Math.round(((orig - price) / orig) * 100);
+                        inputDiscountPercent.value = calculatedPercent;
+                        discountLiveBadge.textContent = `-${calculatedPercent}% OFF`;
+                        discountLiveBadge.style.display = 'inline';
+                    } else if (orig <= price || orig === 0) {
+                        if (source === 'orig' && orig === 0) {
+                            inputDiscountPercent.value = '';
+                            discountLiveBadge.style.display = 'none';
+                        }
+                    }
+                } else if (source === 'disc') {
+                    if (disc > 0 && disc < 100) {
+                        if (orig > 0) {
+                            const calculatedPrice = (orig * (1 - (disc / 100))).toFixed(2);
+                            inputPrice.value = calculatedPrice;
+                        } else if (price > 0) {
+                            const calculatedOrig = (price / (1 - (disc / 100))).toFixed(2);
+                            inputOriginalPrice.value = calculatedOrig;
+                        }
+                        discountLiveBadge.textContent = `-${disc}% OFF`;
+                        discountLiveBadge.style.display = 'inline';
+                    } else {
+                        discountLiveBadge.style.display = 'none';
+                    }
+                }
+            }
+
+            if (inputPrice) inputPrice.addEventListener('input', () => syncDiscountCalculation('price'));
+            if (inputOriginalPrice) inputOriginalPrice.addEventListener('input', () => syncDiscountCalculation('orig'));
+            if (inputDiscountPercent) inputDiscountPercent.addEventListener('input', () => syncDiscountCalculation('disc'));
+            const inputStock = document.getElementById('inputStock');
+            const inputThreshold = document.getElementById('inputThreshold');
+            const inputImageUrl = document.getElementById('inputImageUrl');
+            const inputFileUpload = document.getElementById('inputFileUpload');
+            const radioSourceUrl = document.getElementById('radioSourceUrl');
+            const radioSourceUpload = document.getElementById('radioSourceUpload');
+            const urlContainer = document.getElementById('urlInputContainer');
+            const fileContainer = document.getElementById('fileUploadContainer');
+            const imgPreviewThumb = document.getElementById('imgPreviewThumb');
+            const imgPreviewLabel = document.getElementById('imgPreviewLabel');
+            const autoFillGroup = document.getElementById('autoFillGroup');
+
+            function updateImageSourceInputs() {
+                if (radioSourceUrl.checked) {
+                    urlContainer.style.display = 'block';
+                    fileContainer.style.display = 'none';
+                    if (inputImageUrl.value.trim()) {
+                        imgPreviewThumb.src = inputImageUrl.value.trim();
+                        imgPreviewLabel.textContent = 'URL Image';
+                    }
+                } else {
+                    urlContainer.style.display = 'none';
+                    fileContainer.style.display = 'block';
+                    imgPreviewLabel.textContent = 'ជ្រើសរើសឯកសារពីកុំព្យូទ័រ';
+                }
+            }
+
+            radioSourceUrl.addEventListener('change', updateImageSourceInputs);
+            radioSourceUpload.addEventListener('change', updateImageSourceInputs);
+            inputImageUrl.addEventListener('input', () => {
+                const url = inputImageUrl.value.trim();
+                imgPreviewThumb.src = url || '../home/logo/logome.png';
+            });
+            inputFileUpload.addEventListener('change', () => {
+                if (inputFileUpload.files && inputFileUpload.files[0]) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        imgPreviewThumb.src = e.target.result;
+                        imgPreviewLabel.textContent = inputFileUpload.files[0].name;
+                    };
+                    reader.readAsDataURL(inputFileUpload.files[0]);
+                }
+            });
+
+            // Open Add Modal
+            if (openAddBtn) {
+                openAddBtn.addEventListener('click', () => {
+                    productForm.reset();
+                    formAction.value = 'add';
+                    formProductId.value = '';
+                    modalTitle.innerHTML = '<i class="fas fa-plus-circle" style="color: var(--admin-accent);"></i> បន្ថែមផលិតផលថ្មី';
+                    autoFillGroup.style.display = 'block';
+                    radioSourceUrl.checked = true;
+                    inputOriginalPrice.value = '';
+                    inputDiscountPercent.value = '';
+                    discountLiveBadge.style.display = 'none';
+                    updateImageSourceInputs();
+                    imgPreviewThumb.src = '../home/logo/logome.png';
+                    openModal(productModal);
+                    inputName.focus();
+                });
+            }
+
+            // Open Edit Modal
+            document.querySelectorAll('[data-edit-id]').forEach(btn => {
+                btn.addEventListener('click', async () => {
+                    const id = btn.dataset.editId;
+                    try {
+                        const res = await fetch(`index.php?action=get_product_json&id=${id}`);
+                        const data = await res.json();
+                        if (data.success && data.product) {
+                            const p = data.product;
+                            formAction.value = 'edit';
+                            formProductId.value = p.id;
+                            modalTitle.innerHTML = `<i class="fas fa-pen" style="color: var(--admin-accent);"></i> កែប្រែផលិតផល #${p.id}`;
+                            autoFillGroup.style.display = 'none';
+
+                            inputName.value = p.name;
+                            inputCategory.value = p.category || 'men';
+                            inputDescription.value = p.description || '';
+                            inputPrice.value = p.price;
+                            inputOriginalPrice.value = p.original_price || '';
+                            inputDiscountPercent.value = p.discount_percent || '';
+                            syncDiscountCalculation('orig');
+                            inputCostPrice.value = p.cost_price || '';
+                            inputStock.value = p.stock;
+                            inputThreshold.value = p.low_stock_threshold || 5;
+
+                            const isUrl = p.image && /^https?:\/\//i.test(p.image);
+                            if (isUrl) {
+                                radioSourceUrl.checked = true;
+                                inputImageUrl.value = p.image;
+                                imgPreviewThumb.src = p.image;
+                            } else {
+                                radioSourceUrl.checked = true;
+                                inputImageUrl.value = p.image ? '../' + p.image : '';
+                                imgPreviewThumb.src = p.image ? '../' + p.image : '../home/logo/logome.png';
+                            }
+                            updateImageSourceInputs();
+                            openModal(productModal);
+                        } else {
+                            showToast(data.message || 'Cannot load product details', true);
+                        }
+                    } catch (err) {
+                        showToast('Network error loading product', true);
+                    }
+                });
+            });
+
+            // Product Form Submit (AJAX)
+            productForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const saveBtn = document.getElementById('btnSaveProduct');
+                const origHtml = saveBtn.innerHTML;
+                saveBtn.disabled = true;
+                saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> កំពុងរក្សាទុក...';
+
+                try {
+                    const formData = new FormData(productForm);
+                    const res = await fetch('index.php', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        showToast(data.message || 'Product saved successfully!');
+                        closeModal(productModal);
+                        setTimeout(() => window.location.reload(), 800);
+                    } else {
+                        showToast(data.message || 'Error saving product', true);
+                    }
+                } catch (err) {
+                    showToast('Connection error while saving', true);
+                } finally {
+                    saveBtn.disabled = false;
+                    saveBtn.innerHTML = origHtml;
+                }
+            });
+
+            // ---------------------------------------------------------
+            // Quick Stock Stepper Buttons in Table Rows (+1, -1)
+            // ---------------------------------------------------------
+            document.querySelectorAll('.quick-stock-btn').forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    e.stopPropagation();
+                    const pId = btn.dataset.id;
+                    const delta = parseInt(btn.dataset.delta, 10);
+                    btn.disabled = true;
 
                     try {
-                        const resp = await fetch('../api/scrape-product.php?url=' + encodeURIComponent(url));
-                        if (!resp.ok) throw new Error('Server error ' + resp.status);
-                        const data = await resp.json();
+                        const formData = new FormData();
+                        formData.append('action', 'quick_stock_adjust');
+                        formData.append('id', pId);
+                        formData.append('delta', delta);
+                        formData.append('csrf_token', csrfToken);
+                        formData.append('reason', delta > 0 ? 'បន្ថែមស្តុក 1 (Quick Stepper)' : 'កាត់ស្តុក 1 (Quick Stepper)');
 
-                        if (data.error) {
-                            showStatus('❌ ' + data.error, 'error');
-                            return;
-                        }
+                        const res = await fetch('index.php', { method: 'POST', body: formData });
+                        const data = await res.json();
 
-                        let filled = 0;
-
-                        if (data.name) {
-                            document.getElementById('fieldName').value = data.name;
-                            filled++;
-                        }
-                        if (data.description) {
-                            document.getElementById('fieldDescription').value = data.description;
-                            filled++;
-                        }
-                        if (data.price && parseFloat(data.price) > 0) {
-                            const costField = document.getElementById('fieldCostPrice');
-                            if (costField && costField.value === '') {
-                                costField.value = data.price;
-                                filled++;
+                        if (data.success) {
+                            const badge = document.getElementById(`stockBadge-${pId}`);
+                            const row = btn.closest('.prod-table-row');
+                            if (badge) {
+                                badge.className = `stock-status-pill status-${data.stock_status}`;
+                                badge.textContent = data.stock_after === 0 ? 'អស់ស្តុក (0)' : (data.stock_status === 'low' ? `ស្តុកតិច (${data.stock_after})` : `មានស្តុក (${data.stock_after})`);
                             }
+                            if (row) row.dataset.stock = data.stock_after;
+                            showToast(data.message);
+                        } else {
+                            showToast(data.message || 'Could not update stock', true);
                         }
-                        if (data.image) {
-                            // Switch to URL mode and fill image URL
-                            const urlRadio = document.querySelector('input[name="image_source"][value="url"]');
-                            if (urlRadio) {
-                                urlRadio.checked = true;
-                                updateImageSource();
-                            }
-                            const imgUrlInput = document.getElementById('imageUrlInput');
-                            if (imgUrlInput) {
-                                imgUrlInput.value = data.image;
-                                filled++;
-                            }
-                        }
-
-                        showStatus('✅ Auto-fill រួចរាល់! (' + filled + ' fields filled)', 'success');
-                    } catch (e) {
-                        showStatus('❌ មិនអាច fetch បាន: ' + e.message, 'error');
+                    } catch (err) {
+                        showToast('Network error updating stock', true);
                     } finally {
-                        fetchBtn.disabled = false;
-                        fetchBtn.innerHTML = '<i class="fas fa-wand-magic-sparkles"></i> Auto Fill';
+                        btn.disabled = false;
                     }
                 });
+            });
 
-                // Also trigger on Enter key in link field
-                linkInput.addEventListener('keydown', (e) => {
-                    if (e.key === 'Enter') {
-                        e.preventDefault();
-                        fetchBtn.click();
+            // ---------------------------------------------------------
+            // Quick Stock Adjust Modal Form
+            // ---------------------------------------------------------
+            const stockAdjustForm = document.getElementById('stockAdjustForm');
+            const adjustProdId = document.getElementById('adjustProdId');
+            const adjustProdName = document.getElementById('adjustProdName');
+            const adjustCurrentStockVal = document.getElementById('adjustCurrentStockVal');
+            const adjustNewStock = document.getElementById('adjustNewStock');
+
+            document.querySelectorAll('[data-adjust-id]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const id = btn.dataset.adjustId;
+                    const name = btn.dataset.name;
+                    const curStock = parseInt(btn.dataset.stockVal, 10);
+
+                    adjustProdId.value = id;
+                    adjustProdName.textContent = name;
+                    adjustCurrentStockVal.textContent = curStock;
+                    adjustNewStock.value = curStock;
+                    openModal(stockAdjustModal);
+                });
+            });
+
+            document.querySelectorAll('.adjust-chip').forEach(chip => {
+                chip.addEventListener('click', () => {
+                    const add = parseInt(chip.dataset.add, 10);
+                    const cur = parseInt(adjustNewStock.value || '0', 10);
+                    adjustNewStock.value = Math.max(0, cur + add);
+                });
+            });
+
+            stockAdjustForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                try {
+                    const formData = new FormData(stockAdjustForm);
+                    formData.append('action', 'quick_stock_adjust');
+                    const res = await fetch('index.php', { method: 'POST', body: formData });
+                    const data = await res.json();
+                    if (data.success) {
+                        showToast(data.message);
+                        closeModal(stockAdjustModal);
+                        const badge = document.getElementById(`stockBadge-${data.product_id}`);
+                        const row = document.querySelector(`.prod-table-row[data-id="${data.product_id}"]`);
+                        if (badge) {
+                            badge.className = `stock-status-pill status-${data.stock_status}`;
+                            badge.textContent = data.stock_after === 0 ? 'អស់ស្តុក (0)' : (data.stock_status === 'low' ? `ស្តុកតិច (${data.stock_after})` : `មានស្តុក (${data.stock_after})`);
+                        }
+                        if (row) row.dataset.stock = data.stock_after;
+                    } else {
+                        showToast(data.message || 'Error updating stock', true);
+                    }
+                } catch (err) {
+                    showToast('Connection error', true);
+                }
+            });
+
+            // ---------------------------------------------------------
+            // Delete Modal Handlers
+            // ---------------------------------------------------------
+            const deleteTargetId = document.getElementById('deleteTargetId');
+            const deleteProdNameDisplay = document.getElementById('deleteProdNameDisplay');
+            const deleteProductForm = document.getElementById('deleteProductForm');
+
+            document.querySelectorAll('[data-delete-id]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    deleteTargetId.value = btn.dataset.deleteId;
+                    deleteProdNameDisplay.textContent = btn.dataset.name;
+                    openModal(deleteModal);
+                });
+            });
+
+            deleteProductForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                try {
+                    const formData = new FormData(deleteProductForm);
+                    const res = await fetch('index.php', { method: 'POST', body: formData });
+                    const data = await res.json();
+                    if (data.success) {
+                        showToast(data.message || 'Product deleted');
+                        closeModal(deleteModal);
+                        const row = document.querySelector(`.prod-table-row[data-id="${deleteTargetId.value}"]`);
+                        if (row) row.remove();
+                    } else {
+                        showToast(data.message || 'Could not delete product', true);
+                    }
+                } catch (err) {
+                    showToast('Connection error', true);
+                }
+            });
+
+            // ---------------------------------------------------------
+            // URL Scraper / Auto-Fill Tool
+            // ---------------------------------------------------------
+            const btnScrape = document.getElementById('btnScrapeProduct');
+            const linkInput = document.getElementById('linkScrapeInput');
+            const scrapeStatus = document.getElementById('scrapeStatus');
+
+            if (btnScrape && linkInput) {
+                btnScrape.addEventListener('click', async () => {
+                    const url = linkInput.value.trim();
+                    if (!url) {
+                        scrapeStatus.style.display = 'block';
+                        scrapeStatus.style.color = '#dc2626';
+                        scrapeStatus.textContent = 'សូមបញ្ចូល Link ជាមុនសិន';
+                        return;
+                    }
+                    btnScrape.disabled = true;
+                    btnScrape.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Fetching...';
+                    scrapeStatus.style.display = 'block';
+                    scrapeStatus.style.color = 'var(--admin-primary)';
+                    scrapeStatus.textContent = 'កំពុងទាញយកទិន្នន័យពី Link...';
+
+                    try {
+                        const res = await fetch(`../api/scrape-product.php?url=${encodeURIComponent(url)}`);
+                        const data = await res.json();
+                        if (data.name) inputName.value = data.name;
+                        if (data.description) inputDescription.value = data.description;
+                        if (data.price) inputCostPrice.value = data.price;
+                        if (data.image) {
+                            radioSourceUrl.checked = true;
+                            inputImageUrl.value = data.image;
+                            imgPreviewThumb.src = data.image;
+                            updateImageSourceInputs();
+                        }
+                        scrapeStatus.style.color = 'var(--admin-green)';
+                        scrapeStatus.textContent = '✅ បានបំពេញព័ត៌មានដោយស្វ័យប្រវត្តិកំពុងរង់ចាំពិនិត្យ!';
+                    } catch (err) {
+                        scrapeStatus.style.color = '#dc2626';
+                        scrapeStatus.textContent = '❌ មិនអាចទាញយកទិន្នន័យពី Link នេះបានទេ';
+                    } finally {
+                        btnScrape.disabled = false;
+                        btnScrape.innerHTML = '<i class="fas fa-download"></i> ទាញយកទិន្នន័យ';
                     }
                 });
             }
-
-            function showStatus(msg, type) {
-                if (!fetchStatus) return;
-                fetchStatus.textContent = msg;
-                fetchStatus.style.display = 'block';
-                fetchStatus.style.color = type === 'error' ? '#ff8b9b' : type === 'success' ? '#4ade80' : 'var(--cyber-cyan)';
-            }
-        </script>
-    <?php endif; ?>
-    <script src="../js/theme-mode.js?v=<?php echo filemtime(__DIR__ . '/../js/theme-mode.js'); ?>"></script>
+        })();
+    </script>
+    <script src="../js/theme-mode.js?v=<?= filemtime(__DIR__ . '/../js/theme-mode.js'); ?>"></script>
 </body>
 
 </html>

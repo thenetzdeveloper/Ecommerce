@@ -622,7 +622,39 @@
     width: 34px;
     height: 34px;
     place-items: center;
-    border-radius: 4px;
+    border-radius: 6px;
+    background: #203f3a;
+    color: #fff;
+    flex-shrink: 0;
+}
+
+.admin-brand-logo-frame {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 6px;
+    overflow: hidden;
+    flex-shrink: 0;
+    background: #ffffff;
+    border: 1px solid #ded5cb;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+}
+
+.admin-brand-logo-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.admin-primary-brand .admin-brand-logo-fallback {
+    display: grid;
+    width: 34px;
+    height: 34px;
+    place-items: center;
+    border-radius: 6px;
     background: #203f3a;
     color: #fff;
 }
@@ -845,5 +877,22 @@ body.admin-storefront[data-theme="dark"] .admin-sidebar-logout button:hover {
     .message-storefront .dashboard-container {
         width: min(1320px, calc(100vw - 24px));
         margin: 16px auto 40px;
+    }
+}
+
+
+/* Dashboard Main Pane layout guard */
+.admin-storefront .dashboard-main-pane {
+    margin-left: 240px;
+    width: calc(100% - 240px);
+    max-width: calc(100% - 240px);
+    box-sizing: border-box;
+}
+
+@media (max-width: 760px) {
+    .admin-storefront .dashboard-main-pane {
+        margin-left: 0;
+        width: 100%;
+        max-width: 100%;
     }
 }

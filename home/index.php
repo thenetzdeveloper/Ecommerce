@@ -1,5 +1,19 @@
 <?php
+declare(strict_types=1);
+
+if (ob_get_level() === 0) {
+    ob_start();
+}
+
+if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
+    @session_start();
+}
+
 require_once __DIR__ . '/../api/db.php';
+require_once __DIR__ . '/../api/i18n.php';
+require_once __DIR__ . '/../api/user-auth.php';
+$storeLang = getStoreLanguage();
+
 $storeSettings = [];
 $settingsResult = $conn->query('SELECT setting_name, setting_value FROM system_settings');
 if ($settingsResult) {
@@ -7,14 +21,27 @@ if ($settingsResult) {
         $storeSettings[$setting['setting_name']] = $setting['setting_value'];
     }
 }
-$storeName = $storeSettings['store_name'] ?? '4K STORE';
+$storeName = $storeSettings['store_name'] ?? 'SN STORE';
 $storeCurrency = $storeSettings['currency_symbol'] ?? '$';
 $nav_brand_logo = $storeSettings['store_logo_url'] ?? '';
 $nav_store_name = $storeName;
 $nav_contact_url = $storeSettings['store_contact_url'] ?? 'https://t.me/netstillloser';
-$heroTitle = $storeSettings['home_hero_title'] ?? 'គុណភាពខ្ពស់ 100%';
-$heroDescription = $storeSettings['home_hero_description'] ?? 'ទិញ-លក់ផលិតផល ប្រកបដោយសុវត្ថិភាព មានការធានាជូន និងគាំទ្រការទូទាត់គ្រប់ធនាគារក្នុងប្រទេសកម្ពុជា។';
+$heroTitle = $storeSettings['home_hero_title'] ?? 'គុណភាពខ្ពស់ 100% ម៉ូដទាន់សម័យ';
+$heroDescription = $storeSettings['home_hero_description'] ?? 'ទិញ-លក់សម្លៀកបំពាក់ និងម៉ូដទាន់សម័យ ប្រកបដោយសុវត្ថិភាព មានការធានាជូន និងគាំទ្រការទូទាត់តាម KHQR គ្រប់ធនាគារក្នុងប្រទេសកម្ពុជា។';
 $heroBannerUrl = $storeSettings['home_banner_url'] ?? '';
+$resolvedHeroBanner = '';
+if (!empty($heroBannerUrl)) {
+    if (preg_match('~^(https?://|data:)~i', $heroBannerUrl)) {
+        $resolvedHeroBanner = $heroBannerUrl;
+    } elseif (str_starts_with($heroBannerUrl, './') || str_starts_with($heroBannerUrl, '../')) {
+        $resolvedHeroBanner = $heroBannerUrl;
+    } else {
+        $resolvedHeroBanner = '../' . ltrim($heroBannerUrl, '/');
+    }
+} else {
+    $resolvedHeroBanner = './logo/banner.png';
+}
+
 date_default_timezone_set('Asia/Phnom_Penh');
 $hour = (int)date('H');
 if ($hour < 12) {
@@ -31,717 +58,1245 @@ if ($hour < 12) {
     $greeting_icon = "🌙";
 }
 
-$page = $_GET['page'] ?? '';
-$is_checkout = ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['item'])) || $page === 'checkout' || isset($_GET['item']);
-$orderCsrfToken = '';
-
-if ($is_checkout) {
-    $item = $_POST['item'] ?? $_GET['item'] ?? '';
-    if (!is_string($item) && !is_int($item)) {
-        $item = '';
-    }
-    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-        $checkout_url = $item === '' ? 'index.php' : 'index.php?item=' . rawurlencode((string) $item);
-        header('Location: ' . $checkout_url, true, 303);
-        exit;
-    }
-
-    if (session_status() !== PHP_SESSION_ACTIVE && !session_start()) {
-        http_response_code(500);
-        exit('Unable to start the checkout session. Please try again.');
-    }
-    if (empty($_SESSION['order_csrf_token'])) {
-        $_SESSION['order_csrf_token'] = bin2hex(random_bytes(32));
-    }
-    $orderCsrfToken = $_SESSION['order_csrf_token'];
-
-    $product = null;
-    if ($item !== '' && ctype_digit((string) $item)) {
-        if (isset($conn) && !$conn->connect_error && !ensureProductStockColumn($conn)) {
-            http_response_code(500);
-            exit('Product inventory is temporarily unavailable.');
-        }
-        if (isset($conn) && !$conn->connect_error) {
-            $stmt = $conn->prepare("SELECT * FROM products WHERE id = ? AND stock > 0");
-            if ($stmt) {
-                $stmt->bind_param("i", $item);
-                $stmt->execute();
-                $res = $stmt->get_result();
-                if ($row = $res->fetch_assoc()) {
-                    $product = [
-                        'name' => $row['name'],
-                        'price' => $row['price'],
-                        'img' => !empty($row['image'])
-                            ? (preg_match('~^https?://~i', $row['image']) ? $row['image'] : '../' . $row['image'])
-                            : './logo/logome.png',
-                        'desc' => 'ផលិតផលមានគុណភាពខ្ពស់ និងមានការធានាជូន'
-                    ];
-                }
-                $stmt->close();
-            }
-        }
-    }
-
-    if (!$product && $item !== '') {
-        http_response_code(404);
-        exit('This product is out of stock or no longer available.');
-    }
-
-    if (!$product) {
-        $product = [
-            'name' => 'Special Order',
-            'price' => 'Special Offer',
-            'img' => './logo/logome.png',
-            'desc' => 'សូមទាក់ទងមកកាន់ Admin តាម Telegram ដើម្បីពិនិត្យតម្លៃ និងទិញ'
-        ];
-    }
+if (empty($_SESSION['order_csrf_token'])) {
+    $_SESSION['order_csrf_token'] = bin2hex(random_bytes(32));
 }
-
-if ($page === 'about' && !$is_checkout) {
-?>
-    <!DOCTYPE html>
-    <html lang="km">
-
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title><?php echo $is_checkout ? 'បង់ប្រាក់ • ' . htmlspecialchars($product['name']) . ' • 4K STORE' : 'អំពី NET STORE • ហាងសម្លៀកបំពាក់ និងម៉ូដ'; ?></title>
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-        <link rel="icon" href="./logo/logome.png" type="image/x-icon">
-        <link rel="stylesheet" href="./page.css?v=<?php echo filemtime(__DIR__ . '/page.css'); ?>">
-        <link rel="stylesheet" href="./fashion-theme.css?v=<?php echo filemtime(__DIR__ . '/fashion-theme.css'); ?>">
-        <link rel="stylesheet" href="../css/theme-mode.css?v=<?php echo filemtime(__DIR__ . '/../css/theme-mode.css'); ?>">
-        <script src="../js/page-navigation.js?v=<?php echo filemtime(__DIR__ . '/../js/page-navigation.js'); ?>" defer></script>
-        <style>
-            <?php if ($page === 'about' && !$is_checkout): ?>.about-cyber-layer {
-                position: relative;
-                z-index: 10;
-                width: min(1120px, 100%);
-                margin: 24px auto 70px;
-                padding: 0 24px;
-            }
-
-            .about-hero,
-            .about-section,
-            .about-contact {
-                background: rgba(10, 16, 32, 0.78);
-                backdrop-filter: blur(24px) saturate(180%);
-                -webkit-backdrop-filter: blur(24px) saturate(180%);
-                border: 1px solid rgba(0, 240, 255, 0.28);
-                border-radius: 30px;
-                box-shadow: 0 20px 55px rgba(0, 0, 0, 0.38), 0 0 28px rgba(0, 240, 255, 0.08);
-            }
-
-            .about-hero {
-                position: relative;
-                overflow: hidden;
-                padding: clamp(30px, 6vw, 68px);
-                text-align: center;
-            }
-
-            .about-hero::before {
-                content: "";
-                position: absolute;
-                width: 320px;
-                height: 320px;
-                border-radius: 50%;
-                background: rgba(0, 240, 255, 0.09);
-                filter: blur(70px);
-                top: -180px;
-                right: -90px;
-                pointer-events: none;
-            }
-
-            .about-eyebrow {
-                display: inline-flex;
-                align-items: center;
-                gap: 8px;
-                color: var(--cyber-cyan);
-                border: 1px solid rgba(0, 240, 255, 0.45);
-                border-radius: 999px;
-                padding: 8px 14px;
-                font-size: 12px;
-                font-weight: 700;
-                letter-spacing: .04em;
-            }
-
-            .about-hero h2 {
-                max-width: 800px;
-                margin: 22px auto 16px;
-                color: #fff;
-                font-size: clamp(30px, 5vw, 52px);
-                line-height: 1.25;
-                font-weight: 800;
-                letter-spacing: -.03em;
-            }
-
-            .about-hero h2 span {
-                color: var(--cyber-cyan);
-            }
-
-            .about-lead {
-                max-width: 780px;
-                margin: 0 auto;
-                color: var(--text-muted);
-                font-size: 16px;
-                line-height: 1.9;
-            }
-
-            .about-hero-actions {
-                display: flex;
-                justify-content: center;
-                flex-wrap: wrap;
-                gap: 12px;
-                margin-top: 28px;
-            }
-
-            .about-hero-actions .cyber-glow-btn {
-                padding: 12px 20px;
-            }
-
-            .about-facts {
-                display: grid;
-                grid-template-columns: repeat(3, 1fr);
-                gap: 14px;
-                margin-top: 26px;
-            }
-
-            .about-fact {
-                padding: 18px;
-                border: 1px solid rgba(0, 240, 255, .18);
-                border-radius: 18px;
-                background: rgba(0, 240, 255, .045);
-            }
-
-            .about-fact strong {
-                display: block;
-                color: #fff;
-                font: 700 18px 'Space Grotesk', sans-serif;
-                margin-bottom: 5px;
-            }
-
-            .about-fact span {
-                color: var(--text-muted);
-                font-size: 12px;
-            }
-
-            .about-section {
-                margin-top: 24px;
-                padding: clamp(24px, 4vw, 42px);
-            }
-
-            .about-section-heading {
-                max-width: 760px;
-                margin: 0 auto 26px;
-                text-align: center;
-            }
-
-            .about-section-heading span {
-                display: block;
-                color: var(--cyber-cyan);
-                text-transform: uppercase;
-                font: 700 11px 'Space Grotesk', sans-serif;
-                letter-spacing: .16em;
-                margin-bottom: 10px;
-            }
-
-            .about-section-heading h3 {
-                color: #fff;
-                font-size: clamp(23px, 3vw, 32px);
-                margin-bottom: 10px;
-            }
-
-            .about-section-heading p {
-                color: var(--text-muted);
-                font-size: 14px;
-                line-height: 1.8;
-            }
-
-            .about-story-grid,
-            .about-values-grid,
-            .about-services-grid,
-            .about-steps-grid {
-                display: grid;
-                gap: 14px;
-            }
-
-            .about-story-grid {
-                grid-template-columns: repeat(2, minmax(0, 1fr));
-            }
-
-            .about-info-card,
-            .about-value-card,
-            .about-service-card,
-            .about-step-card {
-                border: 1px solid rgba(0, 240, 255, .18);
-                border-radius: 20px;
-                background: rgba(0, 240, 255, .045);
-                padding: 22px;
-            }
-
-            .about-info-card h4,
-            .about-value-card h4,
-            .about-service-card h4,
-            .about-step-card h4 {
-                color: #fff;
-                font-size: 16px;
-                margin: 12px 0 8px;
-            }
-
-            .about-info-card p,
-            .about-value-card p,
-            .about-service-card p,
-            .about-step-card p {
-                color: var(--text-muted);
-                font-size: 13px;
-                line-height: 1.8;
-            }
-
-            .about-icon {
-                width: 42px;
-                height: 42px;
-                display: grid;
-                place-items: center;
-                border-radius: 13px;
-                color: var(--cyber-cyan);
-                background: rgba(0, 240, 255, .1);
-                border: 1px solid rgba(0, 240, 255, .2);
-            }
-
-            .about-values-grid {
-                grid-template-columns: repeat(3, minmax(0, 1fr));
-            }
-
-            .about-services-grid {
-                grid-template-columns: repeat(4, minmax(0, 1fr));
-            }
-
-            .about-service-card {
-                text-align: center;
-            }
-
-            .about-service-card .about-icon {
-                margin: 0 auto;
-            }
-
-            .about-steps-grid {
-                grid-template-columns: repeat(4, minmax(0, 1fr));
-                counter-reset: about-step;
-            }
-
-            .about-step-card {
-                position: relative;
-            }
-
-            .about-step-card::before {
-                counter-increment: about-step;
-                content: "0" counter(about-step);
-                color: var(--cyber-cyan);
-                font: 700 13px 'Space Grotesk', sans-serif;
-            }
-
-            .about-contact {
-                margin-top: 24px;
-                padding: clamp(28px, 5vw, 48px);
-                text-align: center;
-                border-color: rgba(157, 78, 221, .55);
-                background: linear-gradient(135deg, rgba(0, 240, 255, .08), rgba(157, 78, 221, .13)), rgba(10, 16, 32, .88);
-            }
-
-            .about-contact h3 {
-                color: #fff;
-                font-size: clamp(23px, 3vw, 32px);
-                margin-bottom: 10px;
-            }
-
-            .about-contact p {
-                max-width: 680px;
-                margin: 0 auto;
-                color: var(--text-muted);
-                font-size: 14px;
-                line-height: 1.8;
-            }
-
-            .about-contact .cyber-glow-btn {
-                display: inline-flex;
-                margin-top: 22px;
-                padding: 12px 22px;
-            }
-
-            .about-page-footer {
-                padding: 24px 10px 0;
-                text-align: center;
-                color: var(--text-dim);
-                font-size: 12px;
-            }
-
-            @media (max-width: 760px) {
-                .about-cyber-layer {
-                    padding: 0 14px;
-                    margin-top: 16px;
-                }
-
-                .about-story-grid,
-                .about-values-grid {
-                    grid-template-columns: repeat(2, minmax(0, 1fr));
-                }
-
-                .about-services-grid,
-                .about-steps-grid {
-                    grid-template-columns: repeat(2, minmax(0, 1fr));
-                }
-            }
-
-            @media (max-width: 520px) {
-                .about-cyber-layer {
-                    padding: 0 10px;
-                }
-
-                .about-hero,
-                .about-section,
-                .about-contact {
-                    border-radius: 22px;
-                }
-
-                .about-facts {
-                    gap: 8px;
-                }
-
-                .about-fact {
-                    padding: 13px 8px;
-                }
-
-                .about-fact strong {
-                    font-size: 15px;
-                }
-
-                .about-fact span {
-                    font-size: 10px;
-                }
-
-                .about-story-grid,
-                .about-values-grid,
-                .about-services-grid,
-                .about-steps-grid {
-                    grid-template-columns: 1fr;
-                }
-            }
-
-            <?php else: ?>.checkout-page-layer {
-                position: relative;
-                z-index: 10;
-                min-height: 100vh;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                padding: 30px 16px;
-            }
-
-            .checkout-cyber-card {
-                width: 100%;
-                max-width: 520px;
-                background: rgba(10, 16, 32, 0.78);
-                backdrop-filter: blur(28px) saturate(200%);
-                -webkit-backdrop-filter: blur(28px) saturate(200%);
-                border: 1px solid var(--cyber-cyan);
-                border-radius: 32px;
-                padding: 36px 28px;
-                text-align: center;
-                box-shadow: 0 25px 60px -10px rgba(0, 0, 0, 0.9), 0 0 35px rgba(0, 240, 255, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.4);
-                position: relative;
-            }
-
-            .qr-cyber-frame {
-                width: 210px;
-                height: 210px;
-                margin: 20px auto;
-                border-radius: 24px;
-                background: #fff;
-                padding: 12px;
-                box-shadow: 0 0 25px rgba(0, 240, 255, 0.5);
-                border: 2px solid var(--cyber-cyan);
-                position: relative;
-                overflow: hidden;
-            }
-
-            .qr-cyber-frame img {
-                width: 100%;
-                height: 100%;
-                object-fit: contain;
-            }
-
-            .qr-cyber-laser {
-                display: none;
-            }
-
-            .bank-selector-pills {
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                gap: 8px;
-                margin: 16px 0;
-                flex-wrap: wrap;
-            }
-
-            .bank-sel-btn {
-                padding: 6px 14px;
-                border-radius: 9999px;
-                background: rgba(0, 240, 255, 0.08);
-                border: 1px solid rgba(0, 240, 255, 0.25);
-                color: #fff;
-                font-size: 12px;
-                font-weight: 700;
-                cursor: pointer;
-                transition: all 0.2s ease;
-            }
-
-            .bank-sel-btn.active {
-                background: rgba(0, 240, 255, 0.3);
-                border-color: var(--cyber-cyan);
-                color: var(--cyber-cyan);
-                box-shadow: 0 0 12px rgba(0, 240, 255, 0.4);
-            }
-
-            <?php endif; ?>
-
-            /* Cyber Success Notification Popup Styles */
-            .cyber-notify-overlay {
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100vw;
-                height: 100vh;
-                background: rgba(5, 10, 20, 0.85);
-                backdrop-filter: blur(12px);
-                -webkit-backdrop-filter: blur(12px);
-                z-index: 99999;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                padding: 20px;
-            }
-
-            .cyber-notify-card {
-                background: rgba(10, 16, 32, 0.95);
-                border: 1px solid var(--cyber-cyan, #00f0ff);
-                box-shadow: 0 0 35px rgba(0, 240, 255, 0.35), inset 0 0 15px rgba(0, 240, 255, 0.1);
-                border-radius: 24px;
-                padding: 35px 25px;
-                max-width: 400px;
-                width: 100%;
-                text-align: center;
-                animation: popupScale 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-            }
-
-            .cyber-notify-icon {
-                font-size: 55px;
-                color: var(--cyber-emerald, #00ff66);
-                margin-bottom: 12px;
-                text-shadow: 0 0 20px rgba(0, 255, 102, 0.6);
-            }
-
-            .cyber-notify-card h3 {
-                color: #fff;
-                font-size: 20px;
-                font-weight: 700;
-                margin-bottom: 8px;
-                font-family: 'Space Grotesk', sans-serif;
-            }
-
-            .cyber-notify-card p {
-                color: rgba(255, 255, 255, 0.8);
-                font-size: 13.5px;
-                line-height: 1.6;
-            }
-
-            @keyframes popupScale {
-                from { transform: scale(0.8); opacity: 0; }
-                to { transform: scale(1); opacity: 1; }
-            }
-        </style>
-    </head>
-
-    <body class="fashion-storefront">
-        <canvas id="dna-canvas"></canvas>
-        <div class="canvas-overlay-vignette"></div>
-        <div class="cyber-grid-lines"></div>
-
-        <?php if ($page === 'about' && !$is_checkout): ?>
-            <?php
-            $nav_active = 'about';
-            $nav_home_url = 'index.php';
-            $nav_about_url = 'index.php?page=about';
-            $nav_support_url = '../customer-service/index.php';
-            $nav_payments_url = 'index.php#payments';
-            require __DIR__ . '/navbar.php';
-            ?>
-            <div class="about-cyber-layer">
-                <main>
-                    <section class="about-section">
-                        <div class="about-section-heading">
-                            <span>Who We Are</span>
-                            <h3>អំពី NET STORE</h3>
-                            <p>យើងចង់ធ្វើឱ្យការស្វែងរក និងការទិញសម្លៀកបំពាក់មានភាពងាយស្រួល មានព័ត៌មានច្បាស់ និងទាន់សម័យសម្រាប់អ្នក។</p>
-                        </div>
-                        <div class="about-story-grid">
-                            <article class="about-info-card">
-                                <div class="about-icon"><i class="fas fa-users"></i></div>
-                                <h4>យើងជានរណា?</h4>
-                                <p>4K STORE ជាហាងសម្លៀកបំពាក់ដែលជ្រើសរើសម៉ូដសម្រាប់ការស្លៀកពាក់ប្រចាំថ្ងៃ និងឱកាសពិសេស។ យើងផ្តល់ព័ត៌មានច្បាស់លាស់ ដើម្បីជួយអ្នកជ្រើសរើសផលិតផលដែលសមនឹងរចនាបថរបស់អ្នក។</p>
-                            </article>
-                            <article class="about-info-card">
-                                <div class="about-icon"><i class="fas fa-bullseye"></i></div>
-                                <h4>បេសកកម្មរបស់យើង</h4>
-                                <p>បេសកកម្មរបស់យើងគឺផ្តល់បទពិសោធន៍ទិញសម្លៀកបំពាក់ដែលងាយស្រួល មានព័ត៌មានតម្លៃ និងផលិតផលច្បាស់លាស់ ព្រមទាំងមានជំនួយនៅពេលអ្នកត្រូវការ។</p>
-                            </article>
-                            <article class="about-info-card">
-                                <div class="about-icon"><i class="fas fa-eye"></i></div>
-                                <h4>ចក្ខុវិស័យរបស់យើង</h4>
-                                <p>យើងចង់ក្លាយជាហាងម៉ូដដែលអតិថិជនអាចស្វែងរកស្ទីលថ្មីៗ សួរព័ត៌មាន និងទទួលបានការណែនាំក្នុងការជ្រើសរើសសម្លៀកបំពាក់។</p>
-                            </article>
-                            <article class="about-info-card">
-                                <div class="about-icon"><i class="fas fa-heart"></i></div>
-                                <h4>អតិថិជនជាចម្បង</h4>
-                                <p>យើងស្តាប់សំណួរ និងមតិយោបល់របស់អតិថិជន ដោយព្យាយាមឆ្លើយតបឱ្យបានច្បាស់ និងផ្តល់ព័ត៌មានដែលជួយឱ្យអ្នកដឹងពីជំហានបន្ទាប់ មុននិងក្រោយការទិញ។</p>
-                            </article>
-                        </div>
-                    </section>
-
-                    <section class="about-section">
-                        <div class="about-section-heading">
-                            <span>Our Values</span>
-                            <h3>គោលការណ៍ដែលយើងប្រកាន់ខ្ជាប់</h3>
-                            <p>គោលការណ៍ទាំងនេះណែនាំការងាររបស់យើង និងរបៀបដែលយើងទំនាក់ទំនងជាមួយអតិថិជន។</p>
-                        </div>
-                        <div class="about-values-grid">
-                            <article class="about-value-card">
-                                <div class="about-icon"><i class="fas fa-circle-check"></i></div>
-                                <h4>ភាពច្បាស់លាស់</h4>
-                                <p>ព័ត៌មានផលិតផល តម្លៃ និងជំហានទូទាត់ត្រូវបានបង្ហាញឱ្យងាយយល់ ដើម្បីឱ្យអ្នកពិនិត្យមើលមុនពេលបញ្ជាទិញ។</p>
-                            </article>
-                            <article class="about-value-card">
-                                <div class="about-icon"><i class="fas fa-shield-halved"></i></div>
-                                <h4>ការយកចិត្តទុកដាក់</h4>
-                                <p>យើងគោរពព័ត៌មានរបស់អតិថិជន និងយកចិត្តទុកដាក់លើការជ្រើសរើស ការវេចខ្ចប់ និងការដឹកជញ្ជូនផលិតផល។</p>
-                            </article>
-                            <article class="about-value-card">
-                                <div class="about-icon"><i class="fas fa-handshake"></i></div>
-                                <h4>ការទទួលខុសត្រូវ</h4>
-                                <p>យើងខិតខំឆ្លើយសំណួរ និងផ្តល់ជំនួយពាក់ព័ន្ធនឹងការបញ្ជាទិញតាមព័ត៌មាន និងលក្ខខណ្ឌដែលបានបញ្ជាក់។</p>
-                            </article>
-                        </div>
-                    </section>
-
-                    <section class="about-contact">
-                        <span class="about-eyebrow"><i class="fas fa-headset"></i> WE'RE HERE TO HELP</span>
-                        <h3 style="margin-top:16px;">មានសំណួរអំពីផលិតផល ឬការបញ្ជាទិញ?</h3>
-                        <p>ទាក់ទងក្រុមការងាររបស់យើងតាម Telegram សម្រាប់សួរព័ត៌មានអំពីផលិតផល ការទូទាត់ ឬជំនួយក្រោយការបញ្ជាទិញ។ សូមពិនិត្យព័ត៌មាន និងលក្ខខណ្ឌផលិតផលជាមុន ដើម្បីទទួលបានជំនួយត្រឹមត្រូវ។</p>
-                        <a href="<?php echo htmlspecialchars($nav_contact_url, ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener noreferrer" class="cyber-glow-btn"><i class="fab fa-telegram-plane"></i> ទាក់ទង <?php echo htmlspecialchars($storeName, ENT_QUOTES, 'UTF-8'); ?></a>
-                    </section>
-                </main>
-                <footer class="about-page-footer">&copy; <?php echo date('Y'); ?> 4K STORE • សូមអរគុណដែលបានជ្រើសរើសយើង</footer>
-            </div>
-        <?php else: ?>
-            <div class="checkout-page-layer">
-                <div class="checkout-cyber-card">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                        <a href="index.php" class="cyber-glow-btn" style="padding: 6px 16px; font-size: 13px;"><i class="fas fa-arrow-left"></i> ត្រឡប់ក្រោយ</a>
-                        <span class="dna-badge" style="font-size: 11px; padding: 4px 10px;"><i class="fas fa-shield-halved"></i> 100% Secure Node</span>
-                    </div>
-                    <div class="card-hologram-frame" style="width: 100px; height: 100px; margin: 0 auto 14px; border-radius: 20px;"><img src="<?php echo htmlspecialchars($product['img']); ?>" alt="Product"></div>
-                    <h2 style="font-size: 24px; font-weight: 800; color: #fff; font-family: 'Space Grotesk', sans-serif;"><?php echo htmlspecialchars($product['name']); ?></h2>
-                    <p style="font-size: 13.5px; color: var(--text-muted); margin-top: 4px;"><?php echo htmlspecialchars($product['desc']); ?></p>
-                        <div class="cyber-price-pill" style="margin: 14px auto; font-size: 22px;"><?php echo htmlspecialchars($storeCurrency, ENT_QUOTES, 'UTF-8'); ?><?php echo htmlspecialchars($product['price'], ENT_QUOTES, 'UTF-8'); ?> <span>/ មួយ</span></div>
-                    <div class="bank-selector-pills">
-                        <span class="bank-sel-btn active"><i class="fas fa-qrcode"></i>KHQR</span>
-                    </div>
-                    <div class="qr-cyber-frame">
-                        <div class="qr-cyber-laser"></div><img src="../img/khqr.png" alt="KHQR Payment" onerror="this.src='./logo/icon.png'">
-                    </div>
-                    <div style="background: rgba(0, 240, 255, 0.08); border: 1px solid rgba(0, 240, 255, 0.25); border-radius: 18px; padding: 14px 18px; margin: 18px 0; font-size: 13px; color: rgba(255,255,255,0.9); text-align: left; line-height: 1.5;">
-                        <div style="font-weight: 800; color: var(--cyber-cyan); margin-bottom: 4px;"><i class="fas fa-info-circle"></i> របៀបទូទាត់ប្រាក់៖</div>
-                        1. ស្កេន QR Code ឬថតរូបអេក្រង់ (Screenshot)<br>
-                        2. ចុចប៊ូតុងខាងក្រោមដើម្បីផ្ញើវិក្កយបត្រទៅកាន់ Telegram Admin ភ្លាមៗ
-                    </div>
-                    <a href="<?php echo htmlspecialchars($nav_contact_url, ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener noreferrer" class="cyber-buy-action" style="text-decoration: none; padding: 14px; font-size: 15px;"><i class="fab fa-telegram-plane" style="font-size: 18px;"></i> ផ្ញើវិក្កយបត្រទៅ Telegram</a>
-                    <div style="margin-top: 16px; font-size: 11.5px; color: var(--text-dim);"><i class="fas fa-clock"></i> Admin នឹងបញ្ជាក់ការបញ្ជាទិញ និងព័ត៌មានដឹកជញ្ជូនតាម Telegram</div>
-                </div>
-            </div>
-        <?php endif; ?>
-
-        <script src="../js/theme-mode.js?v=<?php echo filemtime(__DIR__ . '/../js/theme-mode.js'); ?>"></script>
-    </body>
-
-    </html>
-<?php
+$orderCsrfToken = $_SESSION['order_csrf_token'];
+
+$page = $_GET['page'] ?? '';
+if ($page === 'admin' || isset($_GET['admin'])) {
+    header('Location: ../admin/index.php');
     exit;
 }
+$item = $_GET['item'] ?? '';
+$is_checkout = ($page === 'checkout' || (is_string($item) && $item !== '' && ctype_digit($item)));
+
+// Fallback category resolver
+if (!function_exists('resolveStoreCategory')) {
+    function resolveStoreCategory(string $name): string {
+        $n = strtolower($name);
+        if (strpos($n, 'boot') !== false || strpos($n, 'belt') !== false || strpos($n, 'bag') !== false || strpos($n, 'shoe') !== false) {
+            return 'accessories';
+        }
+        if (strpos($n, 'women') !== false || strpos($n, 'dress') !== false || strpos($n, 'skirt') !== false || strpos($n, 'blouse') !== false || strpos($n, 'camisole') !== false) {
+            return 'women';
+        }
+        if (preg_match('/\bmen\b/i', $name) || strpos($n, 'men ') !== false || strpos($n, 't-shirt') !== false || strpos($n, 'chino') !== false) {
+            return 'men';
+        }
+        if (strpos($n, 'capcut') !== false || strpos($n, 'gpt') !== false || strpos($n, 'pic') !== false || 
+            strpos($n, 'sportify') !== false || strpos($n, 'spotify') !== false || strpos($n, 'tiktok') !== false || 
+            strpos($n, 'motion') !== false) {
+            return 'digital';
+        }
+        return 'fashion';
+    }
+}
+
+$catalogItems = [];
 ?>
 <!DOCTYPE html>
-<html lang="km">
+<html lang="<?= htmlspecialchars($storeLang, ENT_QUOTES, 'UTF-8'); ?>">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo htmlspecialchars($storeName, ENT_QUOTES, 'UTF-8'); ?></title>
+    <title><?= $page === 'about' ? ($storeLang === 'en' ? 'About Us • ' . htmlspecialchars($storeName, ENT_QUOTES, 'UTF-8') : 'អំពីយើង • ' . htmlspecialchars($storeName, ENT_QUOTES, 'UTF-8')) : htmlspecialchars($storeName, ENT_QUOTES, 'UTF-8') . ($storeLang === 'en' ? ' • Modern Fashion & Apparel' : ' • ហាងសម្លៀកបំពាក់ និងម៉ូដទាន់សម័យ'); ?></title>
     <!-- Icons & Fonts -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="icon" href="./logo/logome.png" type="image/x-icon">
     <link rel="apple-touch-icon" href="./logo/logome.png">
-    <!-- Cyber DNA Stylesheet -->
-    <link rel="stylesheet" href="./page.css?v=<?php echo filemtime(__DIR__ . '/page.css'); ?>">
-    <link rel="stylesheet" href="./fashion-theme.css?v=<?php echo filemtime(__DIR__ . '/fashion-theme.css'); ?>">
-    <link rel="stylesheet" href="../css/theme-mode.css?v=<?php echo filemtime(__DIR__ . '/../css/theme-mode.css'); ?>">
-    <script src="../js/page-navigation.js?v=<?php echo filemtime(__DIR__ . '/../js/page-navigation.js'); ?>" defer></script>
+    <!-- Storefront Stylesheets -->
+    <link rel="stylesheet" href="./page.css?v=<?= filemtime(__DIR__ . '/page.css'); ?>">
+    <link rel="stylesheet" href="./fashion-theme.css?v=<?= filemtime(__DIR__ . '/fashion-theme.css'); ?>">
+    <link rel="stylesheet" href="../css/theme-mode.css?v=<?= filemtime(__DIR__ . '/../css/theme-mode.css'); ?>">
+    <script src="../js/page-navigation.js?v=<?= filemtime(__DIR__ . '/../js/page-navigation.js'); ?>" defer></script>
+    <style>
+        /* Product Card Discount & Promotion Badges */
+        .card-discount-tag {
+            position: absolute;
+            top: 18px;
+            left: 18px;
+            z-index: 3;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 8px;
+            border-radius: 9999px;
+            background: #e11d48;
+            color: #ffffff;
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 0.3px;
+            box-shadow: 0 4px 10px rgba(225, 29, 72, 0.35);
+            animation: pulse-badge 2s infinite ease-in-out;
+        }
+
+        @keyframes pulse-badge {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .cyber-price-pill.has-discount {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 2px;
+            margin: auto 0 10px;
+        }
+
+        .price-row-main {
+            display: flex;
+            align-items: baseline;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .price-current {
+            font-size: 18px;
+            font-weight: 800;
+            color: #e11d48;
+        }
+
+        .price-original {
+            font-size: 13px;
+            font-weight: 600;
+            color: #9c9489;
+            text-decoration: line-through;
+        }
+
+        .price-discount-tag {
+            font-size: 10.5px;
+            font-weight: 800;
+            padding: 1px 6px;
+            border-radius: 4px;
+            background: #fee2e2;
+            color: #b91c1c;
+            display: inline-block;
+        }
+
+        .price-unit-sub {
+            font-size: 11px;
+            color: #81766d;
+            font-weight: 500;
+        }
+
+        [data-theme="dark"] .card-discount-tag {
+            background: #f43f5e;
+            box-shadow: 0 4px 12px rgba(244, 63, 94, 0.4);
+        }
+
+        [data-theme="dark"] .price-current {
+            color: #fb7185;
+        }
+
+        [data-theme="dark"] .price-original {
+            color: #8b95a5;
+        }
+
+        [data-theme="dark"] .price-discount-tag {
+            background: rgba(225, 29, 72, 0.25);
+            color: #fca5a5;
+        }
+
+        [data-theme="dark"] .price-unit-sub {
+            color: #94a3b8;
+        }
+
+        /* Enhanced Product Card & Action Flow */
+        .card-action-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .btn-card-quickview {
+            width: 38px;
+            height: 38px;
+            border-radius: 4px;
+            border: 1px solid #dcd3c8;
+            background: #f7f4ef;
+            color: #443e38;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+
+        .btn-card-quickview:hover {
+            background: #203f3a;
+            color: #fff;
+            border-color: #203f3a;
+        }
+
+        .btn-card-addcart {
+            flex: 1;
+            min-height: 38px;
+            padding: 8px 10px;
+            border-radius: 4px;
+            border: 1px solid #203f3a;
+            background: transparent;
+            color: #203f3a;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            white-space: nowrap;
+        }
+
+        .btn-card-addcart:hover {
+            background: #203f3a;
+            color: #ffffff;
+        }
+
+        .btn-card-buynow {
+            flex: 1;
+            text-decoration: none;
+            min-height: 38px;
+            padding: 8px 10px;
+            border-radius: 4px;
+            border: 1px solid #805f4b;
+            background: #805f4b;
+            color: #ffffff;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            white-space: nowrap;
+        }
+
+        .btn-card-buynow:hover {
+            background: #5d4334;
+            border-color: #5d4334;
+        }
+
+        /* Catalog Toolbar Controls */
+        .catalog-toolbar-bar {
+            max-width: 1180px;
+            margin: 20px auto 30px;
+            padding: 0 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 14px;
+        }
+
+        .catalog-count-pill {
+            font-size: 13.5px;
+            font-weight: 600;
+            color: var(--text-muted);
+            background: rgba(255, 255, 255, 0.7);
+            padding: 6px 14px;
+            border-radius: 9999px;
+            border: 1px solid #e8e1d8;
+        }
+
+        .catalog-sort-select {
+            padding: 8px 14px;
+            border-radius: 9999px;
+            border: 1px solid #e8e1d8;
+            background: #ffffff;
+            font: inherit;
+            font-size: 13px;
+            color: var(--text-white);
+            outline: none;
+            cursor: pointer;
+        }
+
+        /* Cart Badge in Navigation */
+        .nav-cart-trigger {
+            position: relative;
+            cursor: pointer;
+        }
+
+        .nav-cart-badge {
+            position: absolute;
+            top: -6px;
+            right: -6px;
+            background: #b17b60;
+            color: #ffffff;
+            font-size: 10px;
+            font-weight: 800;
+            min-width: 18px;
+            height: 18px;
+            border-radius: 9999px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 4px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        }
+
+        /* Slide-over Shopping Cart Drawer */
+        .cart-drawer-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 99999;
+            background: rgba(20, 16, 12, 0.5);
+            backdrop-filter: blur(4px);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .cart-drawer-overlay.open {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .cart-drawer-panel {
+            position: fixed;
+            top: 0;
+            right: 0;
+            width: 100%;
+            max-width: 440px;
+            height: 100vh;
+            background: #ffffff;
+            box-shadow: -10px 0 35px rgba(0, 0, 0, 0.15);
+            z-index: 100000;
+            transform: translateX(100%);
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            display: flex;
+            flex-direction: column;
+            color: #302923;
+        }
+
+        .cart-drawer-overlay.open .cart-drawer-panel {
+            transform: translateX(0);
+        }
+
+        .cart-drawer-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid #e8e1d8;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .cart-drawer-header h3 {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #203f3a;
+        }
+
+        .cart-drawer-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px 24px;
+        }
+
+        .cart-item-row {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 14px 0;
+            border-bottom: 1px solid #f0eae1;
+        }
+
+        .cart-item-thumb {
+            width: 60px;
+            height: 60px;
+            border-radius: 6px;
+            object-fit: cover;
+            border: 1px solid #e8e1d8;
+            background: #faf8f5;
+            flex-shrink: 0;
+        }
+
+        .cart-item-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .cart-item-name {
+            font-size: 13.5px;
+            font-weight: 700;
+            color: #302923;
+            margin: 0 0 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .cart-item-price {
+            font-size: 13px;
+            color: #805f4b;
+            font-weight: 700;
+        }
+
+        .cart-qty-stepper {
+            display: inline-flex;
+            align-items: center;
+            border: 1px solid #ded5cb;
+            border-radius: 4px;
+            overflow: hidden;
+            background: #faf8f5;
+            margin-top: 6px;
+        }
+
+        .cart-qty-stepper button {
+            background: transparent;
+            border: 0;
+            padding: 3px 8px;
+            cursor: pointer;
+            font-weight: 700;
+            color: #302923;
+        }
+
+        .cart-qty-stepper button:hover {
+            background: #ede7de;
+        }
+
+        .cart-qty-val {
+            padding: 0 8px;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .cart-item-del {
+            background: transparent;
+            border: 0;
+            color: #b87470;
+            cursor: pointer;
+            padding: 6px;
+            font-size: 15px;
+        }
+
+        .cart-item-del:hover {
+            color: #dc2626;
+        }
+
+        .cart-drawer-footer {
+            padding: 20px 24px;
+            border-top: 1px solid #e8e1d8;
+            background: #faf8f5;
+        }
+
+        .cart-subtotal-line {
+            display: flex;
+            justify-content: space-between;
+            font-size: 16px;
+            font-weight: 700;
+            color: #302923;
+            margin-bottom: 14px;
+        }
+
+        .btn-cart-checkout {
+            width: 100%;
+            padding: 14px;
+            border-radius: 6px;
+            background: #203f3a;
+            color: #ffffff;
+            font-size: 14px;
+            font-weight: 700;
+            border: 0;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: background 0.2s;
+        }
+
+        .btn-cart-checkout:hover {
+            background: #2d564f;
+        }
+
+        /* Floating Cart Quick Access Pill */
+        .floating-cart-pill {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            z-index: 999;
+            background: #203f3a;
+            color: #ffffff;
+            border-radius: 9999px;
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.25);
+            cursor: pointer;
+            transition: transform 0.2s, background 0.2s;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .floating-cart-pill:hover {
+            transform: translateY(-2px);
+            background: #2d564f;
+        }
+
+        .floating-cart-count {
+            background: #b17b60;
+            color: #ffffff;
+            font-size: 11px;
+            font-weight: 800;
+            padding: 2px 7px;
+            border-radius: 9999px;
+        }
+
+        /* Quick View Modal */
+        .quickview-overlay {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            bottom: 0 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            z-index: 999999 !important;
+            background: rgba(20, 16, 12, 0.65) !important;
+            backdrop-filter: blur(8px) !important;
+            -webkit-backdrop-filter: blur(8px) !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            padding: 20px !important;
+            opacity: 0;
+            visibility: hidden;
+            overflow-y: auto !important;
+            transition: opacity 0.25s ease, visibility 0.25s ease !important;
+        }
+
+        .quickview-overlay.open {
+            opacity: 1 !important;
+            visibility: visible !important;
+        }
+
+        .quickview-card {
+            background: #ffffff !important;
+            border-radius: 16px !important;
+            border: 1px solid #e8e1d8 !important;
+            max-width: 760px !important;
+            width: 100% !important;
+            max-height: calc(100vh - 40px) !important;
+            overflow-y: auto !important;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.28) !important;
+            display: grid !important;
+            grid-template-columns: 1fr 1fr !important;
+            transform: scale(0.96);
+            transition: transform 0.25s ease !important;
+            position: relative !important;
+            margin: auto !important;
+            z-index: 1000000 !important;
+        }
+
+        .quickview-overlay.open .quickview-card {
+            transform: scale(1) !important;
+        }
+
+        .quickview-image-pane {
+            background: #f8f5f0 !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            padding: 28px !important;
+            min-height: 280px !important;
+        }
+
+        .quickview-image-pane img {
+            width: 100% !important;
+            max-height: 360px !important;
+            object-fit: cover !important;
+            border-radius: 10px !important;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08) !important;
+        }
+
+        .quickview-info-pane {
+            padding: 32px 28px !important;
+            display: flex !important;
+            flex-direction: column !important;
+            color: #302923 !important;
+        }
+
+        .quickview-close-btn {
+            position: absolute !important;
+            top: 14px !important;
+            right: 14px !important;
+            width: 36px !important;
+            height: 36px !important;
+            border-radius: 50% !important;
+            background: #f0ebe4 !important;
+            border: 1px solid #ded5cb !important;
+            font-size: 16px !important;
+            color: #554d45 !important;
+            cursor: pointer !important;
+            display: grid !important;
+            place-items: center !important;
+            z-index: 20 !important;
+            transition: all 0.2s ease !important;
+        }
+
+        .quickview-close-btn:hover {
+            background: #203f3a !important;
+            color: #ffffff !important;
+            border-color: #203f3a !important;
+        }
+
+        @media (max-width: 680px) {
+            .quickview-card {
+                grid-template-columns: 1fr !important;
+                max-height: 90vh !important;
+                overflow-y: auto !important;
+            }
+            .quickview-image-pane {
+                height: 240px !important;
+                padding: 16px !important;
+            }
+        }
+
+        /* Toast Popup Notification */
+        .store-toast-box {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(20px);
+            background: #203f3a;
+            color: #ffffff;
+            padding: 12px 24px;
+            border-radius: 9999px;
+            font-size: 14px;
+            font-weight: 700;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+            z-index: 1000000;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .store-toast-box.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        @media (max-width: 680px) {
+            .quickview-card {
+                grid-template-columns: 1fr;
+                max-height: 90vh;
+                overflow-y: auto;
+            }
+            .quickview-image-pane {
+                height: 240px;
+            }
+        }
+
+        /* ============================================================= */
+        /* LUXURY ABOUT US SECTION STYLES                               */
+        /* ============================================================= */
+        .about-cyber-layer {
+            max-width: 1200px;
+            margin: 36px auto 72px;
+            padding: 0 clamp(16px, 4vw, 36px);
+            position: relative;
+            z-index: 10;
+        }
+
+        .about-hero {
+            background: #ffffff;
+            border: 1px solid #e8e1d8;
+            border-radius: 16px;
+            padding: clamp(36px, 6vw, 68px) clamp(20px, 4vw, 48px);
+            text-align: center;
+            box-shadow: 0 10px 35px rgba(48, 41, 35, 0.05);
+            margin-bottom: 24px;
+        }
+
+        .about-eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 16px;
+            border-radius: 9999px;
+            font-size: 12px;
+            font-weight: 700;
+            background: #faf8f5;
+            border: 1px solid #ded5cb;
+            color: #805f4b;
+            margin-bottom: 16px;
+        }
+
+        .about-hero h2 {
+            font-family: Georgia, 'Kantumruy Pro', serif;
+            font-size: clamp(26px, 4vw, 40px);
+            font-weight: 700;
+            color: #203f3a;
+            line-height: 1.35;
+            margin: 0 auto 16px;
+            max-width: 840px;
+        }
+
+        .about-lead {
+            font-size: clamp(14px, 1.8vw, 16px);
+            color: #756d64;
+            max-width: 820px;
+            margin: 0 auto 28px;
+            line-height: 1.85;
+        }
+
+        .about-hero-actions {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 14px;
+            flex-wrap: wrap;
+            margin-bottom: 38px;
+        }
+
+        .about-hero-actions .cyber-glow-btn,
+        .about-contact .cyber-glow-btn {
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 9px !important;
+            padding: 13px 26px !important;
+            border-radius: 4px !important;
+            font-size: 14px !important;
+            font-weight: 700 !important;
+            text-decoration: none !important;
+            box-shadow: none !important;
+            cursor: pointer !important;
+            transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease !important;
+        }
+
+        .about-btn-primary {
+            background: #203f3a !important;
+            border: 1px solid #203f3a !important;
+            color: #ffffff !important;
+            box-shadow: 0 4px 14px rgba(32, 63, 58, 0.22) !important;
+        }
+
+        .about-btn-primary:hover {
+            background: #2d564f !important;
+            border-color: #2d564f !important;
+            color: #ffffff !important;
+            transform: translateY(-2px) !important;
+            box-shadow: 0 6px 20px rgba(32, 63, 58, 0.32) !important;
+        }
+
+        .about-btn-primary i {
+            color: #ffffff !important;
+        }
+
+        .about-btn-secondary {
+            background: #faf8f5 !important;
+            border: 1.5px solid #ded5cb !important;
+            color: #332d28 !important;
+            box-shadow: 0 2px 8px rgba(48, 41, 35, 0.04) !important;
+        }
+
+        .about-btn-secondary:hover {
+            background: #805f4b !important;
+            border-color: #805f4b !important;
+            color: #ffffff !important;
+            transform: translateY(-2px) !important;
+            box-shadow: 0 6px 18px rgba(128, 95, 75, 0.24) !important;
+        }
+
+        .about-btn-secondary i {
+            color: #805f4b !important;
+            transition: color 0.15s ease;
+        }
+
+        .about-btn-secondary:hover i {
+            color: #ffffff !important;
+        }
+
+        [data-theme="dark"] .about-btn-primary {
+            background: #203f3a !important;
+            border-color: #2d564f !important;
+            color: #ffffff !important;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45) !important;
+        }
+
+        [data-theme="dark"] .about-btn-primary:hover {
+            background: #2d564f !important;
+            border-color: #34d399 !important;
+        }
+
+        [data-theme="dark"] .about-btn-secondary {
+            background: #1e1915 !important;
+            border-color: #383028 !important;
+            color: #f2eee9 !important;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3) !important;
+        }
+
+        [data-theme="dark"] .about-btn-secondary i {
+            color: #d8c3b4 !important;
+        }
+
+        [data-theme="dark"] .about-btn-secondary:hover {
+            background: #805f4b !important;
+            border-color: #805f4b !important;
+            color: #ffffff !important;
+        }
+
+        .about-facts {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            max-width: 840px;
+            margin: 0 auto;
+        }
+
+        .about-fact {
+            padding: 20px 16px;
+            border-radius: 12px;
+            background: #faf8f5;
+            border: 1px solid #e8e1d8;
+            text-align: center;
+        }
+
+        .about-fact strong {
+            display: block;
+            font-size: 24px;
+            font-weight: 800;
+            color: #203f3a;
+            margin-bottom: 4px;
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        .about-fact span {
+            font-size: 13px;
+            color: #756d64;
+        }
+
+        .about-section {
+            margin-top: 24px;
+            padding: clamp(28px, 5vw, 48px);
+            background: #ffffff;
+            border: 1px solid #e8e1d8;
+            border-radius: 16px;
+            box-shadow: 0 8px 30px rgba(48, 41, 35, 0.04);
+        }
+
+        .about-section-heading {
+            text-align: center;
+            max-width: 720px;
+            margin: 0 auto 32px;
+        }
+
+        .about-section-heading span {
+            text-transform: uppercase;
+            font-size: 11.5px;
+            font-weight: 700;
+            letter-spacing: .08em;
+            color: #805f4b;
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .about-section-heading h3 {
+            font-family: Georgia, 'Kantumruy Pro', serif;
+            font-size: clamp(22px, 3vw, 30px);
+            font-weight: 700;
+            color: #203f3a;
+            margin: 0 0 8px;
+        }
+
+        .about-section-heading p {
+            font-size: 14px;
+            color: #756d64;
+            line-height: 1.7;
+            margin: 0;
+        }
+
+        .about-story-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 20px;
+        }
+
+        .about-values-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 20px;
+        }
+
+        .about-steps-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 18px;
+            counter-reset: about-step;
+        }
+
+        .about-info-card,
+        .about-value-card,
+        .about-step-card {
+            padding: 24px;
+            border-radius: 12px;
+            background: #faf8f5;
+            border: 1px solid #e8e1d8;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .about-info-card:hover,
+        .about-value-card:hover,
+        .about-step-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(48, 41, 35, 0.05);
+        }
+
+        .about-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            background: #f4efe9;
+            color: #805f4b;
+            display: grid;
+            place-items: center;
+            font-size: 20px;
+            margin-bottom: 14px;
+        }
+
+        .about-info-card h4,
+        .about-value-card h4,
+        .about-step-card h4 {
+            font-size: 16px;
+            font-weight: 700;
+            color: #203f3a;
+            margin: 0 0 10px;
+        }
+
+        .about-info-card p,
+        .about-value-card p,
+        .about-step-card p {
+            font-size: 13.5px;
+            color: #756d64;
+            line-height: 1.8;
+            margin: 0;
+        }
+
+        .about-step-card {
+            position: relative;
+        }
+
+        .about-step-card::before {
+            counter-increment: about-step;
+            content: "0" counter(about-step);
+            font-size: 18px;
+            font-weight: 800;
+            color: #805f4b;
+            font-family: 'Space Grotesk', sans-serif;
+            display: block;
+            margin-bottom: 10px;
+        }
+
+        .about-contact {
+            margin-top: 24px;
+            padding: clamp(32px, 5vw, 56px);
+            background: linear-gradient(135deg, #f7f4ef 0%, #efeae2 100%);
+            border: 1px solid #ded5cb;
+            border-radius: 16px;
+            text-align: center;
+        }
+
+        @media (max-width: 860px) {
+            .about-story-grid,
+            .about-values-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+            .about-steps-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+            .about-facts {
+                grid-template-columns: 1fr 1fr 1fr;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .about-story-grid,
+            .about-values-grid,
+            .about-steps-grid,
+            .about-facts {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Dark Mode overrides */
+        [data-theme="dark"] .about-hero,
+        [data-theme="dark"] .about-section {
+            background: #171d28 !important;
+            border-color: #343c4a !important;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4) !important;
+        }
+        [data-theme="dark"] .about-eyebrow {
+            background: #10151e !important;
+            border-color: #343c4a !important;
+            color: #c29b88 !important;
+        }
+        [data-theme="dark"] .about-hero h2,
+        [data-theme="dark"] .about-section-heading h3,
+        [data-theme="dark"] .about-info-card h4,
+        [data-theme="dark"] .about-value-card h4,
+        [data-theme="dark"] .about-step-card h4,
+        [data-theme="dark"] .about-fact strong {
+            color: #edf1f7 !important;
+        }
+        [data-theme="dark"] .about-lead,
+        [data-theme="dark"] .about-section-heading p,
+        [data-theme="dark"] .about-info-card p,
+        [data-theme="dark"] .about-value-card p,
+        [data-theme="dark"] .about-step-card p,
+        [data-theme="dark"] .about-fact span {
+            color: #b0bac8 !important;
+        }
+        [data-theme="dark"] .about-fact,
+        [data-theme="dark"] .about-info-card,
+        [data-theme="dark"] .about-value-card,
+        [data-theme="dark"] .about-step-card {
+            background: #10151e !important;
+            border-color: #343c4a !important;
+        }
+        [data-theme="dark"] .about-icon {
+            background: #1f2735 !important;
+            color: #c29b88 !important;
+        }
+        [data-theme="dark"] .about-contact {
+            background: #10151e !important;
+            border-color: #343c4a !important;
+        }
+        [data-theme="dark"] .about-contact h3 {
+            color: #edf1f7 !important;
+        }
+        [data-theme="dark"] .quickview-card {
+            background: #171d28 !important;
+            border-color: #343c4a !important;
+            color: #edf1f7 !important;
+        }
+        [data-theme="dark"] .quickview-image-pane {
+            background: #10151e !important;
+        }
+        [data-theme="dark"] .quickview-info-pane {
+            color: #edf1f7 !important;
+        }
+        [data-theme="dark"] #qvTitle {
+            color: #edf1f7 !important;
+        }
+        [data-theme="dark"] #qvDescription {
+            color: #b0bac8 !important;
+        }
+        [data-theme="dark"] .quickview-close-btn {
+            background: #1f2735 !important;
+            border-color: #3a4352 !important;
+            color: #b0bac8 !important;
+        }
+        [data-theme="dark"] .quickview-close-btn:hover {
+            background: #203f3a !important;
+            color: #fff !important;
+        }
+        [data-theme="dark"] .cart-drawer-panel {
+            background: #171d28 !important;
+            color: #edf1f7 !important;
+        }
+        [data-theme="dark"] .cart-drawer-header {
+            border-bottom-color: #343c4a !important;
+        }
+        [data-theme="dark"] .cart-drawer-header h3 {
+            color: #edf1f7 !important;
+        }
+        [data-theme="dark"] .cart-item-row {
+            border-bottom-color: #273142 !important;
+        }
+        [data-theme="dark"] .cart-item-name {
+            color: #edf1f7 !important;
+        }
+        [data-theme="dark"] .cart-item-thumb {
+            background: #10151e !important;
+            border-color: #343c4a !important;
+        }
+        [data-theme="dark"] .cart-drawer-footer {
+            background: #10151e !important;
+            border-top-color: #343c4a !important;
+        }
+        [data-theme="dark"] .cart-subtotal-line {
+            color: #edf1f7 !important;
+        }
+    </style>
 </head>
 
-<body class="fashion-storefront<?php echo $is_checkout ? ' buy-modal-open' : ''; ?>">
+<body class="fashion-storefront">
     <!-- Live 3D DNA Helix Canvas Background -->
     <canvas id="dna-canvas"></canvas>
     <div class="canvas-overlay-vignette"></div>
     <div class="cyber-grid-lines"></div>
 
-    <!-- Preloader -->
-    <div id="cyber-preloader">
-        <div class="dna-loader-core"></div>
-        <div style="font-family: 'Space Grotesk', sans-serif; font-size: 13px; font-weight: 700; letter-spacing: 0.15em; color: var(--cyber-cyan); text-transform: uppercase;">
-            Synthesizing DNA Helix Engine...
-        </div>
-    </div>
-
-    <!-- Cyber Success Notification Modal Center Screen -->
-    <div id="cyberSuccessModal" class="cyber-notify-overlay" role="presentation" hidden>
-        <section class="cyber-notify-card" role="alertdialog" aria-modal="true" aria-labelledby="successNotifyTitle" aria-describedby="successNotifyMessage" tabindex="-1">
-            <div class="cyber-notify-icon">
-                <i class="fas fa-check-circle"></i>
-            </div>
-            <h3 id="successNotifyTitle">បញ្ជូនទិន្នន័យជោគជ័យ!</h3>
-            <p id="successNotifyMessage">ព័ត៌មានរបស់អ្នកត្រូវបានផ្ញើទៅកាន់ Telegram Admin រួចរាល់ហើយ។</p>
-            <button type="button" id="closeNotifyBtn" class="cyber-glow-btn" style="width: 100%; margin-top: 18px; padding: 12px; font-size: 15px;">
-                យល់ព្រម
-            </button>
-        </section>
-    </div>
-
     <!-- Main Content Layer -->
     <div class="app-content-layer">
-        <?php
-        $nav_active = 'home';
-        $nav_home_url = 'index.php';
-        $nav_about_url = 'index.php?page=about';
-        $nav_support_url = '../customer-service/index.php';
-        $nav_payments_url = '#payments';
-        require __DIR__ . '/navbar.php';
-        ?>
+        <?php if ($page === 'about'): ?>
+            <?php
+            $nav_active = 'about';
+            $nav_home_url = 'index.php';
+            $nav_about_url = 'index.php?page=about';
+            $nav_support_url = '../customer-service/index.php';
+            $nav_payments_url = 'checkout.php';
+            require __DIR__ . '/navbar.php';
+            ?>
 
-        <!-- Hero Cyber Deck -->
+            <div class="about-cyber-layer">
+                <main>
+                    <!-- About Hero -->
+                    <section class="about-hero">
+                        <span class="about-eyebrow"><i class="fas fa-sparkles"></i> <?= htmlspecialchars($storeName, ENT_QUOTES, 'UTF-8'); ?> • <?= t('about_hero_eyebrow', 'ស្តង់ដារ និងគុណភាពខ្ពស់', 'Premium Standards & Quality'); ?></span>
+                        <h2><?= t('about_hero_title', 'ស្វែងយល់អំពី ' . htmlspecialchars($storeName, ENT_QUOTES, 'UTF-8') . ' និងការប្តេជ្ញាចិត្តរបស់យើង', 'Discover ' . htmlspecialchars($storeName, ENT_QUOTES, 'UTF-8') . ' and Our Commitment'); ?></h2>
+                        <p class="about-lead">
+                            <?= t('about_hero_lead', htmlspecialchars($storeName, ENT_QUOTES, 'UTF-8') . ' គឺជាហាងសម្លៀកបំពាក់ និងម៉ូដទាន់សម័យ ដែលនាំមកជូនលោកអ្នកនូវផលិតផលប្រកបដោយគុណភាពខ្ពស់ ភាពទាន់សម័យ និងទំនុកចិត្ត 100%។ យើងផ្តល់ជូននូវបទពិសោធន៍ទិញទំនិញអនឡាញដ៏ងាយស្រួល សុវត្ថិភាព និងរហ័សទាន់ចិត្ត។', htmlspecialchars($storeName, ENT_QUOTES, 'UTF-8') . ' is a modern fashion and apparel boutique bringing you premium quality, contemporary trends, and 100% customer trust. We deliver a seamless, secure, and fast online shopping experience.'); ?>
+                        </p>
+                        <div class="about-hero-actions">
+                            <a href="index.php" class="cyber-glow-btn about-btn-primary">
+                                <i class="fas fa-bag-shopping"></i> <?= t('about_btn_browse', 'ស្វែងរកផលិតផល', 'Shop Collection Now'); ?>
+                            </a>
+                            <a href="../customer-service/index.php" class="cyber-glow-btn about-btn-secondary">
+                                <i class="fas fa-headset"></i> <?= t('about_btn_support', 'ទាក់ទងផ្នែកបម្រើអតិថិជន', 'Contact Customer Support'); ?>
+                            </a>
+                        </div>
+                        <div class="about-facts">
+                            <div class="about-fact">
+                                <strong>100%</strong>
+                                <span><?= t('about_val1_desc_short', 'គុណភាពធានា និងផលិតផលពិត', 'Guaranteed Quality & Genuine Products'); ?></span>
+                            </div>
+                            <div class="about-fact">
+                                <strong>24/7</strong>
+                                <span><?= t('about_service_short', 'សេវាកម្មរហ័ស និងការឆ្លើយតប', 'Fast Service & Responsive Care'); ?></span>
+                            </div>
+                            <div class="about-fact">
+                                <strong>KHQR</strong>
+                                <span><?= t('about_payment_short', 'ទូទាត់ប្រាក់ងាយស្រួល និងសុវត្ថិភាព', 'Easy & Secure KHQR Payment'); ?></span>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Story & Mission Section -->
+                    <section class="about-section">
+                        <div class="about-section-heading">
+                            <span><?= t('about_story_heading_kicker', 'រឿងរ៉ាវ & បេសកកម្ម', 'Our Story & Mission'); ?></span>
+                            <h3><?= t('about_story_heading_title', 'រឿងរ៉ាវ និងបេសកកម្មរបស់យើង', 'Our Story & Mission'); ?></h3>
+                            <p><?= t('about_story_heading_desc', 'ស្វែងយល់ពីប្រវត្តិ និងគោលបំណងចម្បងក្នុងការបង្កើតឡើងនូវ ' . htmlspecialchars($storeName, ENT_QUOTES, 'UTF-8'), 'Learn about the founding history and core mission behind ' . htmlspecialchars($storeName, ENT_QUOTES, 'UTF-8')); ?></p>
+                        </div>
+                        <div class="about-story-grid">
+                            <article class="about-info-card">
+                                <div class="about-icon"><i class="fas fa-store"></i></div>
+                                <h4><?= t('about_who_title', 'យើងជានរណា?', 'Who We Are'); ?></h4>
+                                <p><?= t('about_who_desc', htmlspecialchars($storeName, ENT_QUOTES, 'UTF-8') . ' បង្កើតឡើងដោយក្តីស្រឡាញ់លើម៉ូដសម្លៀកបំពាក់ និងបំណងប្រាថ្នាក្នុងការផ្តល់ជូនអតិថិជននូវជម្រើសសម្លៀកបំពាក់ស្អាតៗ គុណភាពល្អ សម្រាប់បុរស នារី និងគ្រឿងតុបតែងខ្លួន ដែលស័ក្តិសមនឹងគ្រប់កាលៈទេសៈ。', htmlspecialchars($storeName, ENT_QUOTES, 'UTF-8') . ' was founded out of a passion for fashion and a dedication to providing curated apparel and stylish accessories for men, women, and everyday occasions.'); ?></p>
+                            </article>
+                            <article class="about-info-card">
+                                <div class="about-icon"><i class="fas fa-bullseye"></i></div>
+                                <h4><?= t('about_mission_title', 'បេសកកម្មរបស់យើង', 'Our Mission'); ?></h4>
+                                <p><?= t('about_mission_desc', 'បេសកកម្មចម្បងរបស់យើង គឺការផ្តល់ជូននូវបទពិសោធន៍ទិញទំនិញតាមប្រព័ន្ធឌីជីថលដ៏ល្អឥតខ្ចោះ តម្លៃសមរម្យ តម្លាភាព និងសេវាកម្មដឹកជញ្ជូនរហ័សដល់ដៃអតិថិជនប្រកបដោយការពេញចិត្តខ្ពស់បំផុត。', 'Our core mission is to provide an exceptional online shopping journey with honest pricing, absolute transparency, and fast, reliable nationwide delivery.'); ?></p>
+                            </article>
+                        </div>
+                    </section>
+
+                    <!-- Core Values -->
+                    <section class="about-section">
+                        <div class="about-section-heading">
+                            <span><?= t('about_values_heading_kicker', 'តម្លៃស្នូលរបស់យើង', 'Our Core Values'); ?></span>
+                            <h3><?= t('about_values_heading_title', 'តម្លៃស្នូលដែលយើងប្រកាន់ខ្ជាប់', 'Core Values We Live By'); ?></h3>
+                            <p><?= t('about_values_heading_desc', 'គោលការណ៍ទាំងនេះណែនាំការងាររបស់យើង និងរបៀបដែលយើងបម្រើអតិថិជនគ្រប់រូប', 'These principles guide our operations and define how we serve every customer'); ?></p>
+                        </div>
+                        <div class="about-values-grid">
+                            <article class="about-value-card">
+                                <div class="about-icon"><i class="fas fa-award"></i></div>
+                                <h4><?= t('about_val1_title', 'គុណភាពជាចម្បង', 'Quality First'); ?></h4>
+                                <p><?= t('about_val1_desc', 'រាល់ផលិតផលទាំងអស់ត្រូវបានជ្រើសរើស និងត្រួតពិនិត្យយ៉ាងហ្មត់ចត់មុនពេលបញ្ជូនទៅកាន់ដៃអតិថិជន。', 'Every product is handpicked and thoroughly inspected before being dispatched to our customers.'); ?></p>
+                            </article>
+                            <article class="about-value-card">
+                                <div class="about-icon"><i class="fas fa-handshake"></i></div>
+                                <h4><?= t('about_val2_title', 'ទំនុកចិត្ត និងតម្លាភាព', 'Trust & Transparency'); ?></h4>
+                                <p><?= t('about_val2_desc', 'ព័ត៌មានតម្លៃ រូបភាព និងទំហំស្តុកពិតប្រាកដ 100% គ្មានការបន្លំ ឬលាក់បាំងព័ត៌មានឡើយ。', '100% accurate pricing, genuine photography, and real-time stock levels with zero hidden fees.'); ?></p>
+                            </article>
+                            <article class="about-value-card">
+                                <div class="about-icon"><i class="fas fa-heart"></i></div>
+                                <h4><?= t('about_val3_title', 'ការទទួលខុសត្រូវខ្ពស់', 'Accountability'); ?></h4>
+                                <p><?= t('about_val3_desc', 'យើងយកចិត្តទុកដាក់ខ្ពស់ចំពោះការពេញចិត្តរបស់អតិថិជន និងត្រៀមខ្លួនជួយដោះស្រាយរាល់ចម្ងល់。', 'We are genuinely committed to customer satisfaction and are always ready to assist with any questions.'); ?></p>
+                            </article>
+                        </div>
+                    </section>
+
+                    <!-- 4 Steps Shopping Guide -->
+                    <section class="about-section">
+                        <div class="about-section-heading">
+                            <span><?= t('about_steps_heading_kicker', 'របៀបទិញទំនិញ', 'How To Shop'); ?></span>
+                            <h3><?= t('about_steps_heading_title', 'របៀបទិញទំនិញងាយៗ ៤ ជំហាន', '4 Easy Steps to Shop'); ?></h3>
+                            <p><?= t('about_steps_heading_desc', 'បទពិសោធន៍ទិញទំនិញដ៏រហ័ស និងសុវត្ថិភាពបំផុតជាមួយ ' . htmlspecialchars($storeName, ENT_QUOTES, 'UTF-8'), 'A fast and secure shopping experience with ' . htmlspecialchars($storeName, ENT_QUOTES, 'UTF-8')); ?></p>
+                        </div>
+                        <div class="about-steps-grid">
+                            <article class="about-step-card">
+                                <h4><?= t('about_step1_title', 'ជ្រើសរើសផលិតផល', 'Choose Products'); ?></h4>
+                                <p><?= t('about_step1_desc', 'រើសមើលសម្លៀកបំពាក់ និងម៉ូដដែលអ្នកស្រឡាញ់ក្នុង Storefront', 'Explore and select the fashion items you love in the catalog'); ?></p>
+                            </article>
+                            <article class="about-step-card">
+                                <h4><?= t('about_step2_title', 'ពិនិត្យ និងបញ្ជាទិញ', 'Review & Order'); ?></h4>
+                                <p><?= t('about_step2_desc', 'ពិនិត្យព័ត៌មានលម្អិត បញ្ចូលក្នុងកន្ត្រក ឬចុចទិញភ្លាមៗ', 'Inspect details, add items to cart, or click Buy Now directly'); ?></p>
+                            </article>
+                            <article class="about-step-card">
+                                <h4><?= t('about_step3_title', 'ស្កេនទូទាត់ KHQR', 'Scan Bakong KHQR'); ?></h4>
+                                <p><?= t('about_step3_desc', 'ស្កេនទូទាត់ប្រាក់តាមប្រព័ន្ធ Bakong KHQR គ្រប់ធនាគារ', 'Scan and pay seamlessly via Bakong KHQR with any mobile banking app'); ?></p>
+                            </article>
+                            <article class="about-step-card">
+                                <h4><?= t('about_step4_title', 'ផ្ញើវិក្កយបត្រ & រង់ចាំ', 'Upload Receipt & Relax'); ?></h4>
+                                <p><?= t('about_step4_desc', 'ភ្ជាប់រូបវិក្កយបត្រ រួចរង់ចាំទទួលទំនិញដឹកជញ្ជូនដល់ផ្ទះ', 'Attach payment proof and await fast doorstep delivery'); ?></p>
+                            </article>
+                        </div>
+                    </section>
+
+                    <!-- Contact & Support CTA -->
+                    <section class="about-contact">
+                        <span class="about-eyebrow"><i class="fas fa-headset"></i> <?= t('about_help_eyebrow', 'យើងនៅទីនេះដើម្បីជួយអ្នក', "WE'RE HERE TO HELP"); ?></span>
+                        <h3 style="margin-top: 14px; font-size: clamp(22px, 3vw, 30px); color: #203f3a; font-family: Georgia, 'Kantumruy Pro', serif;"><?= t('about_cta_title', 'មានសំណួរអំពីផលិតផល ឬការបញ្ជាទិញ?', 'Have questions about products or orders?'); ?></h3>
+                        <p style="color: #756d64; max-width: 650px; margin: 10px auto 20px; font-size: 14.5px; line-height: 1.8;">
+                            <?= t('about_cta_desc', 'ទាក់ទងក្រុមការងាររបស់យើងតាម Telegram ឬទំព័រជំនួយអតិថិជន សម្រាប់សួរព័ត៌មានបន្ថែមអំពីផលិតផល ការទូទាត់ ឬជំនួយក្រោយការបញ្ជាទិញ។', 'Reach out to our friendly support team via Telegram or our Support Page for immediate assistance.'); ?>
+                        </p>
+                        <div style="display: flex; justify-content: center; gap: 12px; flex-wrap: wrap;">
+                            <a href="<?= htmlspecialchars($nav_contact_url, ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener noreferrer" class="cyber-glow-btn about-btn-primary">
+                                <i class="fab fa-telegram-plane"></i> <?= t('about_cta_telegram', 'ទាក់ទងតាម Telegram', 'Contact via Telegram'); ?>
+                            </a>
+                            <a href="../customer-service/index.php" class="cyber-glow-btn about-btn-secondary">
+                                <i class="fas fa-envelope"></i> <?= t('about_cta_form', 'ផ្ញើសារក្នុងទំព័រជំនួយ', 'Send Message via Support'); ?>
+                            </a>
+                        </div>
+                    </section>
+                </main>
+                <footer class="about-page-footer" style="text-align: center; margin-top: 36px; padding: 20px 0; color: var(--text-dim); font-size: 13px;">
+                    &copy; <?= date('Y'); ?> <?= htmlspecialchars($storeName, ENT_QUOTES, 'UTF-8'); ?> • <?= t('footer_copyright', 'រក្សាសិទ្ធិគ្រប់យ៉ាង', 'All rights reserved.'); ?>
+                </footer>
+            </div>
+        <?php else: ?>
+            <?php
+            $nav_active = 'home';
+            $nav_home_url = 'index.php';
+            $nav_about_url = 'index.php?page=about';
+            $nav_support_url = '../customer-service/index.php';
+            $nav_payments_url = 'checkout.php';
+            require __DIR__ . '/navbar.php';
+            ?>
+
+        <!-- Hero Section -->
         <main class="hero-deck">
-            <!-- Cyber Status HUD Bar -->
             <div class="cyber-hud-bar">
                 <div class="hud-item">
-                    <span style="font-size: 16px;"><?php echo $greeting_icon; ?></span>
-                    <span style="color: #fff; font-weight: 700;"><?php echo $greeting; ?>!</span>
-                    <span style="color: var(--text-dim); font-size: 12px;">(<?php echo $greeting_en; ?>)</span>
+                    <span style="font-size: 16px;"><?= $greeting_icon; ?></span>
+                    <span style="color: #fff; font-weight: 700;"><?= $storeLang === 'en' ? $greeting_en : $greeting; ?>!</span>
                 </div>
                 <div class="hud-item">
                     <i class="far fa-clock" style="color: var(--cyber-cyan);"></i>
@@ -750,7 +1305,7 @@ if ($page === 'about' && !$is_checkout) {
                 </div>
                 <div class="hud-item">
                     <div class="dna-signal-pulse"></div>
-                    <span style="color: var(--cyber-emerald); font-weight: 700;">60 FPS</span>
+                    <span style="color: var(--cyber-emerald); font-weight: 700;">Online 24/7</span>
                 </div>
             </div>
 
@@ -758,147 +1313,243 @@ if ($page === 'about' && !$is_checkout) {
             <div class="hero-centerpiece">
                 <div class="hero-text-side">
                     <div class="hero-tag-pill">
-                        <i class="fas fa-sparkles"></i> <?php echo htmlspecialchars($storeName, ENT_QUOTES, 'UTF-8'); ?> • Curated for you
+                        <i class="fas fa-sparkles"></i> <?= htmlspecialchars($storeName, ENT_QUOTES, 'UTF-8'); ?> • Curated Collection
                     </div>
-                    <h2><?php echo htmlspecialchars($heroTitle, ENT_QUOTES, 'UTF-8'); ?></h2>
-                    <p><?php echo htmlspecialchars($heroDescription, ENT_QUOTES, 'UTF-8'); ?></p>
+                    <h2><?= htmlspecialchars(t('home_hero_title', $heroTitle, '100% Premium Quality & Modern Fashion'), ENT_QUOTES, 'UTF-8'); ?></h2>
+                    <p><?= htmlspecialchars(t('home_hero_desc', $heroDescription, 'Shop curated fashion & modern apparel with confidence. 100% genuine quality, fast nationwide delivery, and seamless Bakong KHQR payments.'), ENT_QUOTES, 'UTF-8'); ?></p>
                     <a class="fashion-shop-cta" href="#productsCatalogMatrix">
-                        <span>Shop the collection</span>
+                        <span><?= t('hero_cta', 'ទិញទំនិញឥឡូវនេះ (Shop Collection)', 'Shop Collection Now'); ?></span>
                         <i class="fas fa-arrow-right" aria-hidden="true"></i>
                     </a>
                     <div class="hero-stats-row">
                         <div class="stat-chip">
-                            <div class="stat-num">99.9<span>%</span></div>
-                            <div class="stat-label">Uptime</div>
-                        </div>
-                        <div class="stat-chip">
                             <div class="stat-num">100<span>%</span></div>
-                            <div class="stat-label">Full Warranty</div>
+                            <div class="stat-label"><?= t('stat_quality_desc', 'គុណភាពធានា', 'Quality Guaranteed'); ?></div>
                         </div>
                         <div class="stat-chip">
-                            <div class="stat-num">10K<span>+</span></div>
-                            <div class="stat-label">Customers</div>
+                            <div class="stat-num">Fast</div>
+                            <div class="stat-label"><?= t('stat_shipping_desc', 'ដឹកជញ្ជូនរហ័ស', 'Fast Delivery'); ?></div>
+                        </div>
+                        <div class="stat-chip">
+                            <div class="stat-num">KHQR</div>
+                            <div class="stat-label"><?= t('stat_khqr_desc', 'ទូទាត់ងាយស្រួល', 'Easy Payment'); ?></div>
                         </div>
                     </div>
                 </div>
 
                 <div class="hero-visual-side" aria-hidden="true">
-                    <?php if ($heroBannerUrl !== ''): ?><img class="hero-managed-banner" src="<?php echo htmlspecialchars($heroBannerUrl, ENT_QUOTES, 'UTF-8'); ?>" alt=""><?php endif; ?>
-                    <span class="hero-brand-caption"><?php echo htmlspecialchars($storeName, ENT_QUOTES, 'UTF-8'); ?> · CURATED GOODS</span>
+                    <img class="hero-managed-banner" src="<?= htmlspecialchars($resolvedHeroBanner, ENT_QUOTES, 'UTF-8'); ?>" alt="<?= htmlspecialchars($storeName, ENT_QUOTES, 'UTF-8'); ?> Hero" onerror="this.src='./logo/banner.png'">
+                    <span class="hero-brand-caption"><?= htmlspecialchars($storeName, ENT_QUOTES, 'UTF-8'); ?> · CURATED GOODS</span>
                     <span class="hero-brand-mark">4K</span>
                 </div>
             </div>
         </main>
 
-        <section class="catalog-header">
+        <!-- Product Catalog Section -->
+        <section class="catalog-header" id="productsCatalog">
             <div class="catalog-heading-copy">
-                <span class="catalog-kicker">THE 4K EDIT</span>
-                <h2>ស្វែងរកផលិតផលដែលអ្នកចូលចិត្ត</h2>
-                <p>Browse our curated collection and find what suits you.</p>
+                <span class="catalog-kicker"><i class="fas fa-sparkles"></i> <?= t('catalog_kicker', 'THE 4K EDIT', 'THE 4K EDIT'); ?></span>
+                <h2><?= t('catalog_title', 'ស្វែងរកផលិតផលដែលអ្នកពេញចិត្ត', 'Discover Products You Love'); ?></h2>
+                <p><?= t('catalog_subtitle', 'រើសមើលសម្លៀកបំពាក់ ម៉ូដទាន់សម័យ និងទំនិញគុណភាពខ្ពស់', 'Browse stylish fashion, modern apparel and premium goods'); ?></p>
+            </div>
+
+            <!-- Instant Live Search Bar -->
+            <div class="cyber-search-box">
+                <i class="fas fa-search search-beam-icon"></i>
+                <input type="text" id="liveSearchInput" placeholder="<?= htmlspecialchars(t('search_placeholder', 'ស្វែងរកតាមឈ្មោះផលិតផល (Search by product name, e.g. T-Shirt, Jeans, Dress, Capcut...)', 'Search by product name (e.g. T-Shirt, Jeans, Dress...)'), ENT_QUOTES, 'UTF-8'); ?>" autocomplete="off">
+                <button type="button" id="clearStorefrontSearch" class="search-clear-btn" aria-label="សម្អាតស្វែងរក"><i class="fas fa-times"></i></button>
+            </div>
+
+            <!-- Category Filter Pills with Live Product Counters -->
+            <div class="category-tab-strip">
+                <button type="button" class="cyber-category-pill active" data-category="all"><i class="fas fa-th-large"></i> <?= t('cat_all', 'ទាំងអស់ (All)', 'All Items'); ?> <span class="cat-pill-count" id="countCatAll">0</span></button>
+                <button type="button" class="cyber-category-pill" data-category="men"><i class="fas fa-mars"></i> <?= t('cat_men', 'បុរស (Men)', 'Men'); ?> <span class="cat-pill-count" id="countCatMen">0</span></button>
+                <button type="button" class="cyber-category-pill" data-category="women"><i class="fas fa-venus"></i> <?= t('cat_women', 'នារី (Women)', 'Women'); ?> <span class="cat-pill-count" id="countCatWomen">0</span></button>
+                <button type="button" class="cyber-category-pill" data-category="accessories"><i class="fas fa-shoe-prints"></i> <?= t('cat_accessories', 'គ្រឿងតុបតែង (Accessories)', 'Accessories'); ?> <span class="cat-pill-count" id="countCatAcc">0</span></button>
+                <button type="button" class="cyber-category-pill" data-category="digital"><i class="fas fa-bolt"></i> <?= t('cat_digital', 'ឌីជីថល (Digital)', 'Digital'); ?> <span class="cat-pill-count" id="countCatDig">0</span></button>
             </div>
         </section>
 
+        <!-- Sorting & Results Toolbar -->
+        <div class="catalog-toolbar-bar">
+            <div class="catalog-count-pill" id="catalogShowingCountText">
+                <?= t('showing_products', 'បង្ហាញ', 'Showing'); ?> <strong id="catalogShowingCountNum">0</strong> <?= t('products_unit', 'ផលិតផល', 'Products'); ?>
+            </div>
+            <div>
+                <select id="catalogSortSelect" class="catalog-sort-select" aria-label="Sort products">
+                    <option value="featured"><?= t('sort_featured', 'ពេញនិយម (Featured)', 'Featured'); ?></option>
+                    <option value="discount-desc"><?= t('sort_discount_desc', 'បញ្ចុះតម្លៃច្រើនជាងគេ (SALE)', 'Biggest Discount (SALE)'); ?></option>
+                    <option value="price-asc"><?= t('sort_price_asc', 'តម្លៃ៖ ពីទាបទៅខ្ពស់', 'Price: Low to High'); ?></option>
+                    <option value="price-desc"><?= t('sort_price_desc', 'តម្លៃ៖ ពីខ្ពស់ទៅទាប', 'Price: High to Low'); ?></option>
+                    <option value="name-asc"><?= $storeLang === "en" ? "Name: A to Z" : "ឈ្មោះ៖ A ដល់ Z"; ?></option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Product Grid Matrix -->
         <div class="cyber-cards-matrix" id="productsCatalogMatrix">
             <?php
-            if (isset($conn) && !$conn->connect_error && !ensureProductStockColumn($conn)) {
-                http_response_code(500);
-                exit('Product inventory is temporarily unavailable.');
-            }
+            $catalogItems = [];
             if (isset($conn) && !$conn->connect_error) {
-                $db_result = $conn->query("SELECT * FROM products WHERE stock > 0 ORDER BY id DESC");
+                if (function_exists('ensureProductDiscountColumns')) {
+                    ensureProductDiscountColumns($conn);
+                }
+                $db_result = $conn->query("SELECT id, name, category, description, price, original_price, discount_percent, cost_price, image, stock, low_stock_threshold FROM products WHERE stock > 0 ORDER BY id DESC");
                 if ($db_result && $db_result->num_rows > 0) {
                     while ($p = $db_result->fetch_assoc()) {
-                        $p_name = htmlspecialchars($p['name']);
-                        $p_price = htmlspecialchars($p['price']);
-                        $p_img = !empty($p['image'])
-                            ? (preg_match('~^https?://~i', $p['image']) ? htmlspecialchars($p['image'], ENT_QUOTES, 'UTF-8') : '../' . htmlspecialchars($p['image'], ENT_QUOTES, 'UTF-8'))
-                            : './logo/logome.png';
-                        $p_id = htmlspecialchars($p['id']);
-
-                        $cat = "other";
-                        $name_lower = strtolower($p['name']);
-                        if (strpos($name_lower, 'gpt') !== false || strpos($name_lower, 'ai') !== false || strpos($name_lower, 'gemini') !== false) {
-                            $cat = "ai";
-                        } elseif (strpos($name_lower, 'capcut') !== false || strpos($name_lower, 'pic') !== false || strpos($name_lower, 'art') !== false || strpos($name_lower, 'motion') !== false) {
-                            $cat = "design";
-                        } elseif (strpos($name_lower, 'sportify') !== false || strpos($name_lower, 'spotify') !== false || strpos($name_lower, 'youtube') !== false || strpos($name_lower, 'netflix') !== false) {
-                            $cat = "streaming";
-                        } elseif (strpos($name_lower, 'tiktok') !== false || strpos($name_lower, 'telegram') !== false || strpos($name_lower, 'meta') !== false) {
-                            $cat = "social";
+                        $p_id = (int)$p['id'];
+                        $p_name = htmlspecialchars($p['name'], ENT_QUOTES, 'UTF-8');
+                        $p_price = (float)$p['price'];
+                        $p_orig = isset($p['original_price']) && is_numeric($p['original_price']) ? (float)$p['original_price'] : null;
+                        $p_discount = (int)($p['discount_percent'] ?? 0);
+                        $has_discount = false;
+                        if ($p_orig !== null && $p_orig > $p_price) {
+                            $has_discount = true;
+                            if ($p_discount === 0) {
+                                $p_discount = (int) round((($p_orig - $p_price) / $p_orig) * 100);
+                            }
+                        } elseif ($p_discount > 0) {
+                            $has_discount = true;
+                            if ($p_orig === null || $p_orig <= $p_price) {
+                                $p_orig = round($p_price / (1 - ($p_discount / 100)), 2);
+                            }
                         }
+
+                        $p_stock = (int)$p['stock'];
+                        $p_desc = htmlspecialchars($p['description'] ?? 'ផលិតផលមានគុណភាពខ្ពស់ និងមានការធានាជូន', ENT_QUOTES, 'UTF-8');
+                        $p_cat = !empty($p['category']) ? $p['category'] : resolveStoreCategory($p['name']);
+                        $p_img = !empty($p['image'])
+                            ? (preg_match('~^https?://~i', $p['image']) ? $p['image'] : '../' . $p['image'])
+                            : './logo/logome.png';
+
+                        $catalogItems[] = [
+                            'id' => $p_id,
+                            'name' => $p['name'],
+                            'category' => $p_cat,
+                            'price' => $p_price,
+                            'original_price' => $p_orig,
+                            'discount_percent' => $p_discount,
+                            'has_discount' => $has_discount,
+                            'stock' => $p_stock,
+                            'desc' => $p['description'] ?? '',
+                            'img' => $p_img
+                        ];
             ?>
-                        <div class="cyber-card" data-category="<?php echo $cat; ?>" data-name="<?php echo strtolower($p_name); ?>">
-                            <span class="card-top-tag"><i class="fas fa-check"></i> Stock</span>
-                            <div class="card-hologram-frame">
-                                <img src="<?php echo $p_img; ?>" alt="<?php echo $p_name; ?>" onerror="this.src='./logo/logome.png'">
+                        <div class="cyber-card storefront-prod-card" 
+                            data-id="<?= $p_id ?>" 
+                            data-category="<?= strtolower($p_cat); ?>" 
+                            data-name="<?= strtolower($p['name']); ?>"
+                            data-price="<?= $p_price ?>"
+                            data-original-price="<?= $p_orig !== null ? $p_orig : '' ?>"
+                            data-discount="<?= $p_discount ?>"
+                            data-stock="<?= $p_stock ?>"
+                            data-desc="<?= $p_desc ?>"
+                            data-img="<?= htmlspecialchars($p_img, ENT_QUOTES, 'UTF-8'); ?>">
+                            
+                            <?php if ($has_discount && $p_discount > 0): ?>
+                                <span class="card-discount-tag"><i class="fas fa-bolt"></i> -<?= $p_discount ?>%</span>
+                            <?php endif; ?>
+                            <span class="card-top-tag"><i class="fas fa-check-circle"></i> <?= t('badge_in_stock', 'មានស្តុក', 'In Stock'); ?> (<?= $p_stock ?>)</span>
+                            <div class="card-hologram-frame" data-quickview-id="<?= $p_id ?>" style="cursor: pointer;" title="<?= htmlspecialchars(t('btn_quickview', 'មើលព័ត៌មានលម្អិត', 'Quick View'), ENT_QUOTES, 'UTF-8'); ?>">
+                                <img src="<?= htmlspecialchars($p_img, ENT_QUOTES, 'UTF-8'); ?>" alt="<?= $p_name; ?>" loading="lazy" onerror="this.src='./logo/logome.png'">
                             </div>
-                            <h3 class="card-app-title"><?php echo $p_name; ?></h3>
+                            <h3 class="card-app-title" data-quickview-id="<?= $p_id ?>" style="cursor: pointer;" title="<?= htmlspecialchars(t('btn_quickview', 'មើលព័ត៌មានលម្អិត', 'Quick View'), ENT_QUOTES, 'UTF-8'); ?>"><?= $p_name; ?></h3>
                             <div class="card-feature-specs">
-                                <span><i class="fas fa-shield-alt" style="color:var(--cyber-emerald);"></i> ធានាគុណភាព 100%</span>
+                                <span><i class="fas fa-shield-alt" style="color:var(--cyber-emerald);"></i> <?= t('badge_guarantee', 'ធានាគុណភាព 100%', '100% Quality Guaranteed'); ?></span>
                             </div>
-                            <div class="cyber-price-pill">
-                                <?php echo htmlspecialchars($storeCurrency, ENT_QUOTES, 'UTF-8'); ?><?php echo $p_price; ?> <span>/ មួយ</span>
-                            </div>
-                            <div class="card-action-wrap">
-                                <form method="post" action="index.php">
-                                    <input type="hidden" name="item" value="<?php echo $p_id; ?>">
-                                    <button type="submit" class="cyber-buy-action">
-                                        <i class="fas fa-bolt"></i> ទិញឥឡូវនេះ
-                                    </button>
-                                </form>
+
+                            <?php if ($has_discount && $p_orig !== null): ?>
+                                <div class="cyber-price-pill has-discount">
+                                    <div class="price-row-main">
+                                        <span class="price-current"><?= htmlspecialchars($storeCurrency, ENT_QUOTES, 'UTF-8'); ?><?= number_format($p_price, 2); ?></span>
+                                        <span class="price-original"><?= htmlspecialchars($storeCurrency, ENT_QUOTES, 'UTF-8'); ?><?= number_format($p_orig, 2); ?></span>
+                                        <span class="price-discount-tag">-<?= $p_discount ?>%</span>
+                                    </div>
+                                    <span class="price-unit-sub"><?= t('price_per_unit', '/ មួយ', '/ item'); ?></span>
+                                </div>
+                            <?php else: ?>
+                                <div class="cyber-price-pill">
+                                    <?= htmlspecialchars($storeCurrency, ENT_QUOTES, 'UTF-8'); ?><?= number_format($p_price, 2); ?> <span><?= t('price_per_unit', '/ មួយ', '/ item'); ?></span>
+                                </div>
+                            <?php endif; ?>
+                            
+                            <!-- Action Flow Buttons -->
+                            <div class="card-action-row">
+                                <button type="button" class="btn-card-quickview" data-quickview-id="<?= $p_id ?>" title="<?= htmlspecialchars(t('btn_quickview', 'មើលព័ត៌មានលម្អិត', 'Quick View'), ENT_QUOTES, 'UTF-8'); ?>">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button type="button" class="btn-card-addcart" data-add-cart-id="<?= $p_id ?>">
+                                    <i class="fas fa-cart-plus"></i> <?= t('btn_add_cart', 'កន្ត្រក', 'Cart'); ?>
+                                </button>
+                                <a href="checkout.php?item=<?= $p_id ?>&qty=1" class="btn-card-buynow" data-buy-now-id="<?= $p_id ?>">
+                                    <i class="fas fa-bolt"></i> <?= t('btn_buy_now', 'ទិញភ្លាម', 'Buy Now'); ?>
+                                </a>
                             </div>
                         </div>
             <?php
                     }
                 } else {
             ?>
-                    <p class="catalog-empty-state">មិនទាន់មានផលិតផលសម្រាប់លក់នៅឡើយទេ (No products available)</p>
+                    <p class="catalog-empty-state"><?= t('catalog_no_products', 'មិនទាន់មានផលិតផលសម្រាប់លក់នៅឡើយទេ', 'No products available at the moment.'); ?></p>
             <?php
                 }
             }
             ?>
+            <!-- Empty state for search / filter -->
+            <div id="catalogEmptyState" class="catalog-empty-notice" style="display: none; grid-column: 1 / -1; text-align: center; padding: 60px 20px;">
+                <div style="width: 70px; height: 70px; border-radius: 50%; background: #f4efe9; color: #805f4b; display: grid; place-items: center; font-size: 28px; margin: 0 auto 16px;">
+                    <i class="fas fa-search"></i>
+                </div>
+                <h3 style="font-size: 20px; font-weight: 700; color: #203f3a; margin-bottom: 8px;"><?= t('empty_search_title', 'រកមិនឃើញផលិតផលដែលត្រូវនឹងពាក្យស្វែងរក', 'No products found matching your search'); ?></h3>
+                <p style="font-size: 14px; color: var(--text-muted); max-width: 440px; margin: 0 auto 18px;">
+                    <?= t('empty_search_desc', 'សូមសាកល្បងស្វែងរកដោយប្រើពាក្យគន្លឹះផ្សេងទៀត ឬចុចប៊ូតុងខាងក្រោមដើម្បីមើលផលិតផលទាំងអស់ឡើងវិញ។', 'Try searching with different keywords or click the button below to view all products.'); ?>
+                </p>
+                <button type="button" id="btnResetCatalogFilter" class="btn-card-buynow" style="display: inline-flex; align-items: center; gap: 8px; padding: 10px 22px; border-radius: 6px; cursor: pointer; margin: 0 auto;">
+                    <i class="fas fa-rotate-right"></i> <?= t('reset_filter_btn', 'បង្ហាញផលិតផលទាំងអស់ (Reset Filter)', 'Reset Filters & Show All'); ?>
+                </button>
+            </div>
         </div>
 
-        <!-- Capabilities Grid -->
+        <!-- Capabilities Trust Grid -->
         <div class="cyber-trust-grid">
             <div class="cyber-trust-card">
                 <div class="trust-glow-icon"><i class="fas fa-bolt"></i></div>
                 <div class="trust-texts">
-                    <h4>ដឹកជញ្ជូនរហ័ស</h4>
-                    <p>Instant Auto-Delivery</p>
+                    <h4><?= t('trust_shipping_title', 'ដឹកជញ្ជូនរហ័សទូទាំងប្រទេស', 'Fast Nationwide Delivery'); ?></h4>
+                    <p><?= t('trust_shipping_desc', 'ដឹកជញ្ជូនរហ័សដល់ដៃ', 'Fast shipping to your doorstep'); ?></p>
                 </div>
             </div>
             <div class="cyber-trust-card">
                 <div class="trust-glow-icon" style="color: var(--cyber-emerald); border-color: var(--cyber-emerald);"><i class="fas fa-shield-halved"></i></div>
                 <div class="trust-texts">
-                    <h4>ធានាសុវត្ថិភាព 100%</h4>
-                    <p>100% Verified & Safe</p>
+                    <h4><?= t('trust_quality_title', 'ធានាសុវត្ថិភាព 100%', '100% Verified Quality'); ?></h4>
+                    <p><?= t('trust_quality_desc', 'គុណភាពពិតប្រាកដ', 'Authentic products guaranteed'); ?></p>
                 </div>
             </div>
             <div class="cyber-trust-card">
                 <div class="trust-glow-icon" style="color: var(--cyber-pink); border-color: var(--cyber-pink);"><i class="fas fa-qrcode"></i></div>
                 <div class="trust-texts">
-                    <h4>ទូទាត់រហ័ស KHQR</h4>
-                    <p>Bakong & All Banks</p>
+                    <h4><?= t('trust_payment_title', 'ទូទាត់រហ័ស KHQR', 'Instant KHQR Payment'); ?></h4>
+                    <p><?= t('trust_payment_desc', 'Bakong & គ្រប់ធនាគារ', 'Bakong & All Cambodian Banks'); ?></p>
                 </div>
             </div>
             <div class="cyber-trust-card">
                 <div class="trust-glow-icon" style="color: var(--cyber-amber); border-color: var(--cyber-amber);"><i class="fas fa-headset"></i></div>
                 <div class="trust-texts">
-                    <h4>ជំនួយ 24/7</h4>
-                    <p>Telegram Support Desk</p>
+                    <h4><?= t('trust_support_title', 'ជំនួយអតិថិជន 24/7', 'Customer Support 24/7'); ?></h4>
+                    <p><?= t('trust_support_desc', 'Telegram Support Desk', 'Telegram Support Desk'); ?></p>
                 </div>
             </div>
         </div>
 
-        <!-- Cyber Floating Footer -->
+        <!-- Payments Section Footer -->
         <footer class="cyber-footer" id="payments">
             <h3>
                 <i class="fas fa-credit-card" style="color: var(--cyber-cyan);"></i>
-                ដៃគូសហការ និងវិធីទូទាត់ប្រាក់
+                <?= t('footer_payments_title', 'វិធីទូទាត់ប្រាក់ និងដៃគូធនាគារ', 'Payment Methods & Banking Partners'); ?>
             </h3>
             <p style="font-size: 13.5px; color: var(--text-muted); max-width: 600px;">
-                ទទួលការទូទាត់យ៉ាងរហ័សតាមរយៈប្រព័ន្ធ KHQR និងគ្រប់ធនាគារក្នុងប្រទេសកម្ពុជា
+                <?= t('footer_payments_desc', 'ទទួលការទូទាត់យ៉ាងរហ័សតាមរយៈប្រព័ន្ធ KHQR និងគ្រប់ធនាគារក្នុងប្រទេសកម្ពុជា', 'Fast and secure payments accepted via Bakong KHQR and all major Cambodian banks'); ?>
             </p>
             <div class="bank-capsules-row">
                 <div class="bank-cyber-chip">
@@ -923,314 +1574,554 @@ if ($page === 'about' && !$is_checkout) {
                 </div>
             </div>
             <div style="font-size: 12px; color: var(--text-dim); border-top: 1px solid rgba(0, 240, 255, 0.15); padding-top: 18px; width: 100%; font-family: 'Space Grotesk', sans-serif;">
-                &copy; <?php echo date('Y'); ?> 4K STORE • All rights reserved.
+                &copy; <?= date('Y'); ?> <?= htmlspecialchars($storeName, ENT_QUOTES, 'UTF-8'); ?> • <?= t('footer_copyright', 'រក្សាសិទ្ធិគ្រប់យ៉ាង (All rights reserved)', 'All rights reserved.'); ?>
             </div>
         </footer>
+        <?php endif; ?>
     </div>
 
-    <?php if ($is_checkout): ?>
-        <div class="buy-checkout-modal" id="buyCheckoutModal" role="presentation">
-            <section class="checkout-cyber-card" role="dialog" aria-modal="true" aria-labelledby="buyCheckoutTitle" tabindex="-1">
-                <div class="checkout-modal-heading">
-                    <span class="dna-badge"><i class="fas fa-shield-halved"></i> 100% Secure Node</span>
-                    <button type="button" class="checkout-modal-close" aria-label="បិទផ្ទាំងទូទាត់" data-close-checkout>
-                        <i class="fas fa-xmark"></i>
-                    </button>
+    <!-- ============================================================== -->
+    <!-- QUICK VIEW PRODUCT MODAL                                       -->
+    <!-- ============================================================== -->
+    <div class="quickview-overlay" id="quickViewModal">
+        <div class="quickview-card" role="dialog" aria-modal="true">
+            <button type="button" class="quickview-close-btn" id="closeQuickViewBtn" aria-label="បិទ"><i class="fas fa-xmark"></i></button>
+            <div class="quickview-image-pane">
+                <img id="qvImage" src="./logo/logome.png" alt="Product Image">
+            </div>
+            <div class="quickview-info-pane">
+                <span class="prod-cat-badge" id="qvCategory" style="align-self: flex-start; margin-bottom: 8px;">CATEGORY</span>
+                <h2 id="qvTitle" style="font-size: 22px; font-weight: 800; margin: 0 0 8px; color:#203f3a;">Product Title</h2>
+                <div style="display: flex; align-items: baseline; gap: 8px; margin-bottom: 14px; flex-wrap: wrap;">
+                    <span style="font-size: 22px; font-weight: 800; color: #805f4b;" id="qvPrice">$0.00</span>
+                    <span style="font-size: 15px; font-weight: 600; color: #9c9489; text-decoration: line-through; display: none;" id="qvOriginalPrice">$0.00</span>
+                    <span class="price-discount-tag" style="display: none; font-size: 11px; padding: 2px 7px;" id="qvDiscountBadge">-0%</span>
                 </div>
-                <div class="card-hologram-frame checkout-product-image"><img src="<?php echo htmlspecialchars($product['img']); ?>" alt="<?php echo htmlspecialchars($product['name']); ?>"></div>
-                <h2 id="buyCheckoutTitle"><?php echo htmlspecialchars($product['name']); ?></h2>
-                <p class="checkout-product-description"><?php echo htmlspecialchars($product['desc']); ?></p>
-                <div class="cyber-price-pill checkout-product-price"><?php echo htmlspecialchars($storeCurrency, ENT_QUOTES, 'UTF-8'); ?><?php echo htmlspecialchars($product['price'], ENT_QUOTES, 'UTF-8'); ?> <span>/ មួយ</span></div>
-                <?php if ($item !== '' && ctype_digit((string) $item) && is_numeric($product['price'])): ?>
-                    <div class="checkout-coupon-panel">
-                        <label for="checkoutCouponCode">Discount code</label>
-                        <div class="checkout-coupon-row">
-                            <input id="checkoutCouponCode" name="coupon_code" type="text" maxlength="40" autocomplete="off" placeholder="Enter coupon code">
-                            <button id="applyCheckoutCoupon" type="button" class="cyber-buy-action">Apply</button>
-                        </div>
-                        <p id="checkoutCouponStatus" class="checkout-coupon-status" role="status" aria-live="polite"></p>
-                        <p id="checkoutDiscountLine" hidden>Discount: <strong></strong></p>
-                        <p id="checkoutTotalLine">Total: <strong><?php echo htmlspecialchars($storeCurrency, ENT_QUOTES, 'UTF-8'); ?><?php echo number_format((float) $product['price'], 2); ?></strong></p>
+                <p id="qvDescription" style="font-size: 13.5px; color: var(--text-muted); line-height: 1.7; flex: 1; margin: 0 0 18px;">
+                    Description...
+                </p>
+                <div style="font-size: 12.5px; color: #2e7d32; font-weight: 700; margin-bottom: 14px;" id="qvStockNotice">
+                    <i class="fas fa-check-circle"></i> <?= t('qv_stock_notice', 'មានក្នុងស្តុក', 'In Stock'); ?>
+                </div>
+                
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 18px;">
+                    <span style="font-size: 13px; font-weight: 700;"><?= t('qv_qty_label', 'ចំនួន:', 'Quantity:'); ?></span>
+                    <div class="cart-qty-stepper" style="font-size: 14px;">
+                        <button type="button" id="qvQtyMinus">&minus;</button>
+                        <span class="cart-qty-val" id="qvQtyVal">1</span>
+                        <button type="button" id="qvQtyPlus">&plus;</button>
                     </div>
-                <?php endif; ?>
-                <div class="checkout-payment-instructions">
-                    <div><i class="fas fa-info-circle"></i> របៀបទូទាត់ប្រាក់៖</div>
-                    1. ស្កេន QR Code ឬថតរូបអេក្រង់ (Screenshot)<br>
-                    2. ចុចប៊ូតុងខាងក្រោមដើម្បីផ្ញើវិក្កយបត្រទៅកាន់ Telegram Admin ភ្លាមៗ
                 </div>
-                <div class="bank-selector-pills">
-                    <span class="bank-sel-btn active"><i class="fas fa-qrcode"></i> Bakong KHQR</span>
-                </div>
-                <div class="qr-cyber-frame"><img src="../img/khqr.png" alt="KHQR Payment" onerror="this.src='./logo/icon.png'"></div>
-                <form class="checkout-order-form" id="checkoutOrderForm" action="../api/telegram-order.php" method="post" enctype="multipart/form-data">
-                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($orderCsrfToken, ENT_QUOTES, 'UTF-8'); ?>">
-                    <input type="hidden" name="item" value="<?php echo htmlspecialchars((string) $item, ENT_QUOTES, 'UTF-8'); ?>">
-                    <!-- Customer Name Input -->
-                    <label for="checkoutName">ឈ្មោះអតិថិជន</label>
-                    <input id="checkoutName" name="customer_name" type="text" maxlength="100" autocomplete="name" placeholder="នាម/ឈ្មោះ" required>
 
-                    <!-- Phone Number Input -->
-                    <label for="checkoutPhone">លេខទូរស័ព្ទ</label>
-                    <input id="checkoutPhone" name="phone_number" type="tel" inputmode="tel" autocomplete="tel" placeholder="បញ្ចូលលេខទូរស័ព្ទ" required>
-
-                    <!-- Location Input -->
-                    <label for="checkoutLocation">ទីតាំង</label>
-                    <input id="checkoutLocation" name="location" type="text" maxlength="300" placeholder="បញ្ចូលទីតាំង" required>
-
-                    <p class="checkout-receipt-field-label">វិក្កយបត្រ ឬរូបថតអេក្រង់បង់ប្រាក់</p>
-                    <label class="checkout-receipt-upload" for="checkoutReceipt">
-                        <i class="fas fa-cloud-arrow-up"></i>
-                        <span>ជ្រើសរើសរូបភាព ឬ PDF នៃការបង់ប្រាក់</span>
-                        <small>JPG, PNG, WEBP, HEIC ឬ PDF — ទំហំអតិបរមា 5 MB</small>
-                    </label>
-                    <input id="checkoutReceipt" class="checkout-receipt-input" name="receipt" type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif,application/pdf" required>
-                    <span class="checkout-receipt-filename" id="checkoutReceiptFilename">មិនទាន់បានជ្រើសរើសឯកសារ</span>
-                    <div class="checkout-order-status" id="checkoutOrderStatus" role="status" aria-live="polite"></div>
-
-                    <button type="submit" class="cyber-buy-action checkout-telegram-action">
-                        <i class="fab fa-telegram-plane"></i> បញ្ជូនព័ត៏មាន
+                <div style="display: flex; gap: 10px;">
+                    <button type="button" class="btn-card-addcart" id="qvAddToCartBtn" style="padding: 12px; font-size: 13px;">
+                        <i class="fas fa-cart-plus"></i> <?= t('qv_btn_add_cart', 'ដាក់ក្នុងកន្ត្រក', 'Add to Cart'); ?>
                     </button>
-                </form>
-
-                <div class="checkout-delivery-note"><i class="fas fa-clock"></i> Admin នឹងបញ្ជាក់ការបញ្ជាទិញ និងព័ត៌មានដឹកជញ្ជូនតាម Telegram
-                    <p class="checkout-email-privacy">ព័ត៌មាននេះនឹងត្រូវផ្ញើទៅ Admin តាម Telegram ប៉ុណ្ណោះ។</p>
+                    <button type="button" class="btn-card-buynow" id="qvBuyNowBtn" style="padding: 12px; font-size: 13px;">
+                        <i class="fas fa-bolt"></i> <?= t('qv_btn_buy_now', 'ទិញឥឡូវ', 'Buy Now'); ?>
+                    </button>
                 </div>
-            </section>
+            </div>
         </div>
-        <script>
-            (() => {
-                const modal = document.getElementById('buyCheckoutModal');
-                const dialog = modal.querySelector('[role="dialog"]');
-                const closeModal = () => {
-                    modal.hidden = true;
-                    document.body.classList.remove('buy-modal-open');
-                };
+    </div>
 
-                modal.querySelector('[data-close-checkout]').addEventListener('click', closeModal);
-                modal.addEventListener('click', (event) => {
-                    if (event.target === modal) closeModal();
-                });
-                document.addEventListener('keydown', (event) => {
-                    if (event.key === 'Escape' && !modal.hidden) closeModal();
-                });
+    <!-- ============================================================== -->
+    <!-- SLIDE-OVER SHOPPING CART DRAWER                                -->
+    <!-- ============================================================== -->
+    <div class="cart-drawer-overlay" id="cartDrawerOverlay">
+        <aside class="cart-drawer-panel" role="dialog" aria-modal="true" aria-labelledby="cartDrawerTitle">
+            <div class="cart-drawer-header">
+                <h3 id="cartDrawerTitle"><i class="fas fa-shopping-bag"></i> <?= t('cart_drawer_title', 'កន្ត្រកទំនិញរបស់អ្នក', 'Your Shopping Cart'); ?> (<span id="drawerCartCount">0</span>)</h3>
+                <button type="button" class="quickview-close-btn" id="closeCartDrawerBtn" aria-label="បិទ"><i class="fas fa-xmark"></i></button>
+            </div>
+            <div class="cart-drawer-body" id="cartDrawerBody">
+                <!-- Injected via JavaScript -->
+            </div>
+            <div class="cart-drawer-footer" id="cartDrawerFooter">
+                <div class="cart-subtotal-line">
+                    <span><?= t('cart_subtotal_label', 'សរុបបឋម (Subtotal):', 'Subtotal:'); ?></span>
+                    <span id="drawerCartSubtotal"><?= $storeCurrency; ?>0.00</span>
+                </div>
+                <div style="font-size: 12px; color: #2e7d32; margin-bottom: 14px;">
+                    <i class="fas fa-truck-fast"></i> <?= t('cart_shipping_badge', 'គាំទ្រការដឹកជញ្ជូនរហ័ស និងទូទាត់តាម KHQR', 'Fast nationwide shipping & Bakong KHQR payment supported'); ?>
+                </div>
+                <a href="checkout.php" class="btn-cart-checkout" id="cartDrawerCheckoutBtn" style="text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <i class="fas fa-credit-card"></i> <?= t('cart_btn_checkout', 'បន្តទៅកាន់ការទូទាត់ (Checkout)', 'Proceed to Checkout'); ?>
+                </a>
+            </div>
+        </aside>
+    </div>
 
-                const orderForm = document.getElementById('checkoutOrderForm');
-                const successModal = document.getElementById('cyberSuccessModal');
-                const closeSuccessModal = () => {
-                    successModal.hidden = true;
-                    document.body.classList.remove('buy-modal-open');
-                };
-                const closeNotifyButton = document.getElementById('closeNotifyBtn');
-                closeNotifyButton.addEventListener('click', closeSuccessModal);
+    <!-- ============================================================== -->
+    <!-- FLOATING CART QUICK BUTTON                                     -->
+    <!-- ============================================================== -->
+    <div class="floating-cart-pill" id="floatingCartBtn">
+        <i class="fas fa-shopping-bag"></i>
+        <span><?= t('nav_cart', 'កន្ត្រក', 'Cart'); ?></span>
+        <span class="floating-cart-count" id="floatingCartCount">0</span>
+    </div>
 
-                const receiptInput = document.getElementById('checkoutReceipt');
-                const receiptFilename = document.getElementById('checkoutReceiptFilename');
-                const orderStatus = document.getElementById('checkoutOrderStatus');
-                const couponCodeInput = document.getElementById('checkoutCouponCode');
-                const applyCouponButton = document.getElementById('applyCheckoutCoupon');
-                const storeCurrency = <?= json_encode($storeCurrency, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
-                const submitButton = orderForm.querySelector('button[type="submit"]');
-                const submitButtonContent = submitButton.innerHTML;
+    <!-- ============================================================== -->
+    <!-- Success Confirmation Modal -->
+    <div id="cyberSuccessModal" class="cyber-notify-overlay" role="presentation" hidden>
+        <section class="cyber-notify-card" role="alertdialog" aria-modal="true" tabindex="-1">
+            <div class="cyber-notify-icon">
+                <i class="fas fa-check-circle" style="color: #2e7d32;"></i>
+            </div>
+            <h3 style="font-size: 21px; margin-bottom: 8px;">ការបញ្ជាទិញជោគជ័យ!</h3>
+            <p id="successNotifyMessage" class="success-notify-text">
+                ព័ត៌មានរបស់អ្នកត្រូវបានផ្ញើទៅកាន់ Telegram Admin រួចរាល់ហើយ។
+            </p>
+            <div class="success-ref-pill">
+                លេខកូដបញ្ជាទិញ: <strong id="successOrderRef" style="color: #805f4b;">--</strong>
+            </div>
+            <button type="button" id="closeSuccessNotifyBtn" class="cyber-glow-btn" style="width: 100%; padding: 12px; font-size: 14px;">
+                យល់ព្រម (Done)
+            </button>
+        </section>
+    </div>
 
-                receiptInput.addEventListener('change', () => {
-                    const receipt = receiptInput.files[0];
-                    receiptFilename.textContent = receipt
-                        ? `${receipt.name} (${(receipt.size / (1024 * 1024)).toFixed(2)} MB)`
-                        : 'មិនទាន់បានជ្រើសរើសឯកសារ';
-                });
+    <!-- Toast Notification Popup -->
+    <div class="store-toast-box" id="storeToast">
+        <i class="fas fa-check-circle"></i> <span id="storeToastMsg">ជោគជ័យ!</span>
+    </div>
 
-                if (couponCodeInput && applyCouponButton) {
-                    const couponStatus = document.getElementById('checkoutCouponStatus');
-                    const discountLine = document.getElementById('checkoutDiscountLine');
-                    const totalLine = document.getElementById('checkoutTotalLine');
-                    const checkoutSubtotal = Number(<?= json_encode((float) $product['price']) ?>);
-                    const resetCouponPreview = () => {
-                        discountLine.hidden = true;
-                        totalLine.querySelector('strong').textContent = `${storeCurrency}${checkoutSubtotal.toFixed(2)}`;
-                    };
-                    couponCodeInput.addEventListener('input', () => {
-                        resetCouponPreview();
-                        couponStatus.textContent = '';
-                        couponStatus.dataset.state = '';
-                    });
-                    applyCouponButton.addEventListener('click', async () => {
-                        const couponCode = couponCodeInput.value.trim();
-                        if (!couponCode) {
-                            couponStatus.dataset.state = 'error';
-                            couponStatus.textContent = 'Enter a discount code.';
-                            return;
-                        }
-                        applyCouponButton.disabled = true;
-                        couponStatus.dataset.state = '';
-                        couponStatus.textContent = 'Checking code...';
-                        try {
-                            const response = await fetch('../api/validate-coupon.php', {
-                                method: 'POST',
-                                body: new URLSearchParams({ product_id: orderForm.elements.namedItem('item').value, coupon_code: couponCode })
-                            });
-                            const data = await response.json();
-                            if (!response.ok || data.success !== true) throw new Error(data.message || 'Coupon could not be applied.');
-                            couponCodeInput.value = data.coupon_code;
-                            discountLine.hidden = false;
-                            discountLine.querySelector('strong').textContent = `-${storeCurrency}${Number(data.discount).toFixed(2)}`;
-                            totalLine.querySelector('strong').textContent = `${storeCurrency}${Number(data.total).toFixed(2)}`;
-                            couponStatus.dataset.state = 'success';
-                            couponStatus.textContent = 'Discount applied. The final amount is checked again when you submit.';
-                        } catch (error) {
-                            resetCouponPreview();
-                            couponStatus.dataset.state = 'error';
-                            couponStatus.textContent = error.message || 'Coupon could not be applied.';
-                        } finally {
-                            applyCouponButton.disabled = false;
-                        }
-                    });
-                }
-
-                orderForm.addEventListener('submit', (e) => {
-                    e.preventDefault();
-
-                    const receipt = receiptInput.files[0];
-                    if (!receipt) {
-                        orderStatus.dataset.state = 'error';
-                        orderStatus.textContent = 'សូមភ្ជាប់វិក្កយបត្រ ឬរូបថតអេក្រង់បង់ប្រាក់។';
-                        receiptInput.focus();
-                        return;
-                    }
-                    if (receipt.size > 5 * 1024 * 1024) {
-                        orderStatus.dataset.state = 'error';
-                        orderStatus.textContent = 'ឯកសារធំពេក។ សូមជ្រើសរើសឯកសារមិនលើស 5 MB។';
-                        receiptInput.focus();
-                        return;
-                    }
-
-                    submitButton.disabled = true;
-                    submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> កំពុងបញ្ជូន...';
-                    orderStatus.dataset.state = '';
-                    orderStatus.textContent = 'កំពុងបញ្ជូនព័ត៌មាន និងវិក្កយបត្រទៅ Admin...';
-
-                    fetch(orderForm.action, {
-                        method: 'POST',
-                        body: new FormData(orderForm)
-                    })
-                    .then(async (response) => {
-                        const data = await response.json();
-                        if (!response.ok || data.success !== true) {
-                            throw new Error(data.message || 'មិនអាចបញ្ជូនការបញ្ជាទិញបានទេ។');
-                        }
-                        modal.hidden = true;
-                        successModal.hidden = false;
-                        closeNotifyButton.focus();
-                    })
-                    .catch((error) => {
-                        orderStatus.dataset.state = 'error';
-                        orderStatus.textContent = error.message || 'មានបញ្ហាក្នុងការតភ្ជាប់បណ្តាញ!';
-                    })
-                    .finally(() => {
-                        submitButton.disabled = false;
-                        submitButton.innerHTML = submitButtonContent;
-                    })
-                });
-
-                window.history.replaceState({}, document.title, 'index.php');
-                dialog.focus();
-
-                document.addEventListener('keydown', (event) => {
-                    if (event.key === 'Escape' && !successModal.hidden) {
-                        closeSuccessModal();
-                    }
-                });
-            })();
-        </script>
-    <?php endif; ?>
-
-    <!-- Scroll Up Floating Button -->
-    <button id="cyberScrollTop" aria-label="Scroll to top">
-        <i class="fas fa-chevron-up"></i>
-    </button>
-
-    <!-- Interactive DNA Canvas & Client Engine -->
+    <!-- ============================================================== -->
+    <!-- CLIENT JAVASCRIPT ENGINE (SEARCH, CART, QUICKVIEW, CHECKOUT)   -->
+    <!-- ============================================================== -->
     <script>
-        // Dismiss preloader
-        window.addEventListener("load", () => {
-            const preloader = document.getElementById("cyber-preloader");
-            if (preloader) {
-                preloader.style.opacity = "0";
-                preloader.style.visibility = "hidden";
+        (() => {
+            const storeCurrency = <?= json_encode($storeCurrency); ?>;
+            const catalogData = <?= json_encode($catalogItems ?? []); ?> || [];
+            const storeLang = <?= json_encode($storeLang); ?>;
+            const i18n = {
+                cartAdded: <?= json_encode(t('toast_cart_added', 'បានដាក់ចូលកន្ត្រកជោគជ័យ!', 'Added to cart successfully!')); ?>,
+                cartEmptyNotice: <?= json_encode(t('cart_empty_text', 'កន្ត្រករបស់អ្នកមិនទាន់មានទំនិញនៅឡើយទេ', 'Your shopping cart is currently empty')); ?>,
+                shopNow: <?= json_encode(t('cart_btn_shop_now', 'ទៅកាន់កាតាឡុកទំនិញ (Shop Now)', 'Shop Collection')); ?>,
+                inStock: <?= json_encode(t('qv_stock_notice', 'មានក្នុងស្តុក', 'In Stock')); ?>,
+                itemsUnit: <?= json_encode($storeLang === 'en' ? 'units' : 'គ្រឿង'); ?>,
+                showing: <?= json_encode(t('showing_products', 'បង្ហាញ', 'Showing')); ?>,
+                products: <?= json_encode(t('products_unit', 'ផលិតផល', 'Products')); ?>
+            };
+            const catalogMap = new Map();
+            if (Array.isArray(catalogData)) {
+                catalogData.forEach(item => catalogMap.set(item.id, item));
             }
-        });
 
-        // Live Clock
-        function updateLiveClock() {
-            const clockEl = document.getElementById("liveClockDisplay");
-            if (!clockEl) return;
-            const now = new Date();
-            clockEl.textContent = now.toLocaleTimeString('en-US', {
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit',
-                hour12: true
-            });
-        }
-        setInterval(updateLiveClock, 1000);
-        updateLiveClock();
+            // Toast helper
+            const toastEl = document.getElementById('storeToast');
+            const toastMsg = document.getElementById('storeToastMsg');
+            function showToast(msg) {
+                toastMsg.textContent = msg;
+                toastEl.classList.add('show');
+                setTimeout(() => toastEl.classList.remove('show'), 2500);
+            }
 
-        // Live Product Search Filter
-        const searchInput = document.getElementById("liveSearchInput");
-        const cards = document.querySelectorAll(".cyber-card");
-
-        function filterProducts() {
-            const query = (searchInput ? searchInput.value : "").trim().toLowerCase();
-            const activeTab = document.querySelector(".cyber-category-pill.active");
-            const activeCat = activeTab ? activeTab.getAttribute("data-category") : "all";
-
-            cards.forEach((card) => {
-                const name = card.getAttribute("data-name") || "";
-                const cat = card.getAttribute("data-category") || "all";
-                const matchSearch = query === "" || name.includes(query);
-                const matchCategory = activeCat === "all" || cat === activeCat;
-
-                if (matchSearch && matchCategory) {
-                    card.style.display = "flex";
-                } else {
-                    card.style.display = "none";
+            // Live Phnom Penh Clock
+            function updateClock() {
+                const el = document.getElementById('liveClockDisplay');
+                if (el) {
+                    const now = new Date();
+                    el.textContent = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
                 }
-            });
-        }
-
-        if (searchInput) {
-            searchInput.addEventListener("input", filterProducts);
-        }
-
-        // Category Pills
-        const categoryPills = document.querySelectorAll(".cyber-category-pill");
-        categoryPills.forEach((pill) => {
-            pill.addEventListener("click", () => {
-                categoryPills.forEach(p => p.classList.remove("active"));
-                pill.classList.add("active");
-                filterProducts();
-            });
-        });
-
-        // Scroll to Top
-        const scrollBtn = document.getElementById("cyberScrollTop");
-        window.addEventListener("scroll", () => {
-            if (!scrollBtn) return;
-            if (window.scrollY > 300) {
-                scrollBtn.style.display = "flex";
-            } else {
-                scrollBtn.style.display = "none";
             }
-        });
-        if (scrollBtn) {
-            scrollBtn.addEventListener("click", () => {
-                window.scrollTo({
-                    top: 0,
-                    behavior: "smooth"
+            setInterval(updateClock, 1000);
+            updateClock();
+
+            // -------------------------------------------------------------
+            // SHOPPING CART (LOCALSTORAGE ENGINE)
+            // -------------------------------------------------------------
+            const CART_STORAGE_KEY = '4k_store_cart_v1';
+            let cart = [];
+
+            try {
+                const saved = localStorage.getItem(CART_STORAGE_KEY);
+                if (saved) cart = JSON.parse(saved);
+            } catch (e) { cart = []; }
+
+            function saveCart() {
+                try {
+                    localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
+                } catch (e) {}
+                updateCartUI();
+            }
+
+            function addToCart(productId, qty = 1) {
+                const p = catalogMap.get(productId);
+                if (!p) return;
+                const existing = cart.find(it => it.id === productId);
+                if (existing) {
+                    existing.qty = Math.min(p.stock, existing.qty + qty);
+                } else {
+                    cart.push({ id: p.id, name: p.name, price: p.price, img: p.img, qty: Math.min(p.stock, qty) });
+                }
+                saveCart();
+                showToast(storeLang === 'en' ? `Added "${p.name}" to your cart!` : `បានបន្ថែម "${p.name}" ទៅក្នុងកន្ត្រក!`);
+            }
+
+            function updateCartUI() {
+                const totalItems = cart.reduce((sum, it) => sum + it.qty, 0);
+                const subtotal = cart.reduce((sum, it) => sum + (it.price * it.qty), 0);
+
+                // Update badge numbers
+                const navBadge = document.getElementById('navCartCount');
+                if (navBadge) navBadge.textContent = totalItems;
+                const mobBadge = document.getElementById('mobileCartCount');
+                if (mobBadge) mobBadge.textContent = totalItems;
+                const floatCount = document.getElementById('floatingCartCount');
+                if (floatCount) floatCount.textContent = totalItems;
+                const drawerCount = document.getElementById('drawerCartCount');
+                if (drawerCount) drawerCount.textContent = totalItems;
+
+                // Update drawer items list
+                const drawerBody = document.getElementById('cartDrawerBody');
+                const drawerFooter = document.getElementById('cartDrawerFooter');
+                const subtotalEl = document.getElementById('drawerCartSubtotal');
+                if (subtotalEl) subtotalEl.textContent = `${storeCurrency}${subtotal.toFixed(2)}`;
+
+                if (drawerBody) {
+                    if (cart.length === 0) {
+                        drawerBody.innerHTML = `
+                            <div style="text-align:center; padding: 40px 10px; color: var(--text-muted);">
+                                <i class="fas fa-shopping-bag" style="font-size: 42px; color: #ded5cb; margin-bottom: 12px; display:block;"></i>
+                                <p style="font-size: 14px; margin: 0 0 16px;">${i18n.cartEmptyNotice}</p>
+                                <a href="#productsCatalog" class="cyber-glow-btn" style="padding: 8px 18px; font-size: 13px;" onclick="document.getElementById('cartDrawerOverlay').classList.remove('open');">${i18n.shopNow}</a>
+                            </div>`;
+                        if (drawerFooter) drawerFooter.style.display = 'none';
+                    } else {
+                        if (drawerFooter) drawerFooter.style.display = 'block';
+                        drawerBody.innerHTML = cart.map(it => `
+                            <div class="cart-item-row" data-item-id="${it.id}">
+                                <img src="${it.img}" alt="${it.name}" class="cart-item-thumb">
+                                <div class="cart-item-info">
+                                    <h4 class="cart-item-name">${it.name}</h4>
+                                    <div class="cart-item-price">${storeCurrency}${it.price.toFixed(2)}</div>
+                                    <div class="cart-qty-stepper">
+                                        <button type="button" class="cart-minus-btn" data-id="${it.id}">&minus;</button>
+                                        <span class="cart-qty-val">${it.qty}</span>
+                                        <button type="button" class="cart-plus-btn" data-id="${it.id}">&plus;</button>
+                                    </div>
+                                </div>
+                                <button type="button" class="cart-item-del" data-id="${it.id}" title="លុបចេញ"><i class="fas fa-trash-can"></i></button>
+                            </div>
+                        `).join('');
+
+                        // Attach listeners to items
+                        drawerBody.querySelectorAll('.cart-minus-btn').forEach(b => {
+                            b.addEventListener('click', () => {
+                                const id = parseInt(b.dataset.id, 10);
+                                const it = cart.find(x => x.id === id);
+                                if (it) {
+                                    if (it.qty > 1) it.qty--;
+                                    else cart = cart.filter(x => x.id !== id);
+                                    saveCart();
+                                }
+                            });
+                        });
+                        drawerBody.querySelectorAll('.cart-plus-btn').forEach(b => {
+                            b.addEventListener('click', () => {
+                                const id = parseInt(b.dataset.id, 10);
+                                const it = cart.find(x => x.id === id);
+                                const p = catalogMap.get(id);
+                                if (it && p && it.qty < p.stock) {
+                                    it.qty++;
+                                    saveCart();
+                                } else {
+                                    showToast('ស្តុកមានកំណត់!');
+                                }
+                            });
+                        });
+                        drawerBody.querySelectorAll('.cart-item-del').forEach(b => {
+                            b.addEventListener('click', () => {
+                                const id = parseInt(b.dataset.id, 10);
+                                cart = cart.filter(x => x.id !== id);
+                                saveCart();
+                            });
+                        });
+                    }
+                }
+            }
+
+            // Open/close Cart Drawer
+            const cartDrawer = document.getElementById('cartDrawerOverlay');
+            const openCartNav = document.getElementById('navbarCartBtn');
+            const openCartMobile = document.getElementById('mobileCartBtn');
+            const openCartFloat = document.getElementById('floatingCartBtn');
+            const closeCartDrawer = document.getElementById('closeCartDrawerBtn');
+
+            function openDrawer() { cartDrawer.classList.add('open'); }
+            function closeDrawer() { cartDrawer.classList.remove('open'); }
+
+            if (openCartNav) openCartNav.addEventListener('click', openDrawer);
+            if (openCartMobile) openCartMobile.addEventListener('click', openDrawer);
+            if (openCartFloat) openCartFloat.addEventListener('click', openDrawer);
+            if (closeCartDrawer) closeCartDrawer.addEventListener('click', closeDrawer);
+            cartDrawer.addEventListener('click', (e) => {
+                if (e.target === cartDrawer) closeDrawer();
+            });
+
+            // Initial cart UI render
+            updateCartUI();
+
+            // -------------------------------------------------------------
+            // LIVE SEARCH, CATEGORY FILTER & SORTING
+            // -------------------------------------------------------------
+            const searchInput = document.getElementById('liveSearchInput');
+            const clearSearchBtn = document.getElementById('clearStorefrontSearch');
+            const catPills = document.querySelectorAll('.cyber-category-pill');
+            const sortSelect = document.getElementById('catalogSortSelect');
+            const matrix = document.getElementById('productsCatalogMatrix');
+            const cards = Array.from(document.querySelectorAll('.storefront-prod-card'));
+            const countNumEl = document.getElementById('catalogShowingCountNum');
+
+            // Populate category counts
+            const catCounterMap = { all: cards.length, men: 0, women: 0, accessories: 0, digital: 0 };
+            cards.forEach(c => {
+                const cat = (c.dataset.category || '').toLowerCase();
+                if (catCounterMap[cat] !== undefined) catCounterMap[cat]++;
+            });
+            const elAll = document.getElementById('countCatAll');
+            const elMen = document.getElementById('countCatMen');
+            const elWomen = document.getElementById('countCatWomen');
+            const elAcc = document.getElementById('countCatAcc');
+            const elDig = document.getElementById('countCatDig');
+            if (elAll) elAll.textContent = catCounterMap.all;
+            if (elMen) elMen.textContent = catCounterMap.men;
+            if (elWomen) elWomen.textContent = catCounterMap.women;
+            if (elAcc) elAcc.textContent = catCounterMap.accessories;
+            if (elDig) elDig.textContent = catCounterMap.digital;
+
+            function filterCatalog() {
+                const query = (searchInput ? searchInput.value : '').trim().toLowerCase();
+                const activePill = document.querySelector('.cyber-category-pill.active');
+                const activeCat = activePill ? activePill.dataset.category : 'all';
+
+                let visibleCount = 0;
+                cards.forEach(card => {
+                    const name = card.dataset.name || '';
+                    const cat = card.dataset.category || 'other';
+
+                    const matchSearch = query === '' || name.includes(query);
+                    const matchCategory = activeCat === 'all' || cat === activeCat;
+
+                    if (matchSearch && matchCategory) {
+                        card.style.display = 'flex';
+                        visibleCount++;
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
+
+                if (countNumEl) countNumEl.textContent = visibleCount;
+                const emptyNotice = document.getElementById('catalogEmptyState');
+                if (emptyNotice) {
+                    emptyNotice.style.display = visibleCount === 0 ? 'block' : 'none';
+                }
+            }
+
+            function sortCatalog() {
+                const sortType = sortSelect ? sortSelect.value : 'featured';
+                const sorted = cards.slice().sort((a, b) => {
+                    const idA = parseInt(a.dataset.id, 10);
+                    const idB = parseInt(b.dataset.id, 10);
+                    const priceA = parseFloat(a.dataset.price);
+                    const priceB = parseFloat(b.dataset.price);
+                    const discA = parseInt(a.dataset.discount, 10) || 0;
+                    const discB = parseInt(b.dataset.discount, 10) || 0;
+                    const nameA = a.dataset.name;
+                    const nameB = b.dataset.name;
+
+                    if (sortType === 'featured') return idB - idA;
+                    if (sortType === 'discount-desc') return (discB - discA) || (idB - idA);
+                    if (sortType === 'price-asc') return priceA - priceB;
+                    if (sortType === 'price-desc') return priceB - priceA;
+                    if (sortType === 'name-asc') return nameA.localeCompare(nameB);
+                    return 0;
+                });
+                sorted.forEach(c => matrix.appendChild(c));
+            }
+
+            if (searchInput) {
+                searchInput.addEventListener('input', () => {
+                    if (clearSearchBtn) clearSearchBtn.style.display = searchInput.value.length > 0 ? 'block' : 'none';
+                    filterCatalog();
+                });
+            }
+            if (clearSearchBtn) {
+                clearSearchBtn.addEventListener('click', () => {
+                    searchInput.value = '';
+                    clearSearchBtn.style.display = 'none';
+                    searchInput.focus();
+                    filterCatalog();
+                });
+            }
+            catPills.forEach(pill => {
+                pill.addEventListener('click', () => {
+                    catPills.forEach(p => p.classList.remove('active'));
+                    pill.classList.add('active');
+                    filterCatalog();
                 });
             });
-        }
+            if (sortSelect) sortSelect.addEventListener('change', () => {
+                sortCatalog();
+                filterCatalog();
+            });
+
+            const btnResetCatalogFilter = document.getElementById('btnResetCatalogFilter');
+            if (btnResetCatalogFilter) {
+                btnResetCatalogFilter.addEventListener('click', () => {
+                    if (searchInput) searchInput.value = '';
+                    if (clearSearchBtn) clearSearchBtn.style.display = 'none';
+                    catPills.forEach(p => p.classList.remove('active'));
+                    const allPill = document.querySelector('.cyber-category-pill[data-category="all"]');
+                    if (allPill) allPill.classList.add('active');
+                    filterCatalog();
+                });
+            }
+
+            // Initial count
+            filterCatalog();
+
+            // -------------------------------------------------------------
+            // QUICK VIEW MODAL
+            // -------------------------------------------------------------
+            const qvModal = document.getElementById('quickViewModal');
+            const qvClose = document.getElementById('closeQuickViewBtn');
+            const qvImage = document.getElementById('qvImage');
+            const qvTitle = document.getElementById('qvTitle');
+            const qvCategory = document.getElementById('qvCategory');
+            const qvPrice = document.getElementById('qvPrice');
+            const qvOriginalPrice = document.getElementById('qvOriginalPrice');
+            const qvDiscountBadge = document.getElementById('qvDiscountBadge');
+            const qvDesc = document.getElementById('qvDescription');
+            const qvStockNotice = document.getElementById('qvStockNotice');
+            const qvQtyVal = document.getElementById('qvQtyVal');
+            const qvQtyMinus = document.getElementById('qvQtyMinus');
+            const qvQtyPlus = document.getElementById('qvQtyPlus');
+            const qvAddCartBtn = document.getElementById('qvAddToCartBtn');
+            const qvBuyNowBtn = document.getElementById('qvBuyNowBtn');
+            let qvCurrentItem = null;
+            let qvCurrentQty = 1;
+
+            function openQuickView(productId) {
+                const p = catalogMap.get(productId);
+                if (!p) return;
+                qvCurrentItem = p;
+                qvCurrentQty = 1;
+                qvQtyVal.textContent = '1';
+                qvImage.src = p.img;
+                qvTitle.textContent = p.name;
+                qvCategory.textContent = p.category.toUpperCase();
+                if (p.has_discount && p.original_price > p.price) {
+                    qvPrice.textContent = `${storeCurrency}${p.price.toFixed(2)}`;
+                    qvPrice.style.color = '#e11d48';
+                    if (qvOriginalPrice) {
+                        qvOriginalPrice.textContent = `${storeCurrency}${p.original_price.toFixed(2)}`;
+                        qvOriginalPrice.style.display = 'inline';
+                    }
+                    if (qvDiscountBadge) {
+                        qvDiscountBadge.textContent = `-${p.discount_percent}% OFF`;
+                        qvDiscountBadge.style.display = 'inline-block';
+                    }
+                } else {
+                    qvPrice.textContent = `${storeCurrency}${p.price.toFixed(2)}`;
+                    qvPrice.style.color = '#805f4b';
+                    if (qvOriginalPrice) qvOriginalPrice.style.display = 'none';
+                    if (qvDiscountBadge) qvDiscountBadge.style.display = 'none';
+                }
+                const currentStoreName = <?= json_encode($storeName, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
+                qvDesc.textContent = p.desc || (storeLang === 'en' ? 'Premium quality guaranteed by ' + currentStoreName + '.' : 'ផលិតផលគុណភាពខ្ពស់ មានការធានាជូនត្រឹមត្រូវពី ' + currentStoreName);
+                qvStockNotice.innerHTML = `<i class="fas fa-check-circle"></i> ${i18n.inStock} (${p.stock} ${i18n.itemsUnit})`;
+                qvModal.classList.add('open');
+                document.body.style.overflow = 'hidden';
+            }
+
+            function closeQuickView() {
+                qvModal.classList.remove('open');
+                document.body.style.overflow = '';
+            }
+
+            if (qvClose) qvClose.addEventListener('click', closeQuickView);
+            qvModal.addEventListener('click', (e) => {
+                if (e.target === qvModal) closeQuickView();
+            });
+
+            if (qvQtyMinus) {
+                qvQtyMinus.addEventListener('click', () => {
+                    if (qvCurrentQty > 1) {
+                        qvCurrentQty--;
+                        qvQtyVal.textContent = qvCurrentQty;
+                    }
+                });
+            }
+            if (qvQtyPlus) {
+                qvQtyPlus.addEventListener('click', () => {
+                    if (qvCurrentItem && qvCurrentQty < qvCurrentItem.stock) {
+                        qvCurrentQty++;
+                        qvQtyVal.textContent = qvCurrentQty;
+                    }
+                });
+            }
+            if (qvAddCartBtn) {
+                qvAddCartBtn.addEventListener('click', () => {
+                    if (qvCurrentItem) {
+                        addToCart(qvCurrentItem.id, qvCurrentQty);
+                        closeQuickView();
+                    }
+                });
+            }
+            if (qvBuyNowBtn) {
+                qvBuyNowBtn.addEventListener('click', () => {
+                    if (qvCurrentItem) {
+                        window.location.href = `checkout.php?item=${encodeURIComponent(qvCurrentItem.id)}&qty=${encodeURIComponent(qvCurrentQty)}`;
+                    }
+                });
+            }
+
+            // Bind Card Buttons (Quick View, Add Cart, Buy Now)
+            document.querySelectorAll('[data-quickview-id]').forEach(btn => {
+                btn.addEventListener('click', () => openQuickView(parseInt(btn.dataset.quickviewId, 10)));
+            });
+            document.querySelectorAll('[data-add-cart-id]').forEach(btn => {
+                btn.addEventListener('click', () => addToCart(parseInt(btn.dataset.addCartId, 10), 1));
+            });
+            document.querySelectorAll('[data-buy-now-id]').forEach(btn => {
+                btn.addEventListener('click', () => startSingleCheckout(parseInt(btn.dataset.buyNowId, 10), 1));
+            });
+
+            // -------------------------------------------------------------
+            // CHECKOUT ROUTING ENGINE
+            function startSingleCheckout(productId, qty = 1) {
+                window.location.href = `checkout.php?item=${encodeURIComponent(productId)}&qty=${encodeURIComponent(qty)}`;
+            }
+
+            function startCartCheckout(e) {
+                if (e && e.preventDefault) e.preventDefault();
+                if (!cart || cart.length === 0) {
+                    showToast('កន្ត្រករបស់អ្នកទទេ! សូមជ្រើសរើសទំនិញជាមុនសិន');
+                    return;
+                }
+                window.location.href = 'checkout.php';
+            }
+
+            const cartDrawerCheckoutBtn = document.getElementById('cartDrawerCheckoutBtn');
+            if (cartDrawerCheckoutBtn) {
+                cartDrawerCheckoutBtn.addEventListener('click', startCartCheckout);
+            }
+
+            // If user arrived with URL ?item=ID, trigger single checkout automatically
+            <?php if ($is_checkout && $item !== '' && ctype_digit((string)$item)): ?>
+                startSingleCheckout(<?= (int)$item; ?>, 1);
+            <?php endif; ?>
+
+            // If user arrived with URL ?qv=ID, open Quick View modal automatically
+            const qvParam = new URLSearchParams(window.location.search).get('qv');
+            if (qvParam && /^\d+$/.test(qvParam)) {
+                setTimeout(() => openQuickView(parseInt(qvParam, 10)), 100);
+            }
+        })();
     </script>
-    <script src="../js/theme-mode.js?v=<?php echo filemtime(__DIR__ . '/../js/theme-mode.js'); ?>"></script>
+    <script src="../js/theme-mode.js?v=<?= filemtime(__DIR__ . '/../js/theme-mode.js'); ?>"></script>
 </body>
 
 </html>

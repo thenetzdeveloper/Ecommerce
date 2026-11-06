@@ -117,6 +117,35 @@ if (!function_exists('ensureProductStockColumn')) {
     }
 }
 
+if (!function_exists('ensureProductDiscountColumns')) {
+    function ensureProductDiscountColumns(mysqli $connection): bool
+    {
+        $origColumn = $connection->query("SHOW COLUMNS FROM products LIKE 'original_price'");
+        if (!$origColumn) {
+            error_log('Could not check product original_price schema: ' . $connection->error);
+            return false;
+        }
+
+        if ($origColumn->num_rows === 0 && !$connection->query('ALTER TABLE products ADD original_price DECIMAL(10,2) NULL DEFAULT NULL AFTER price')) {
+            error_log('Could not add product original_price column: ' . $connection->error);
+            return false;
+        }
+
+        $discColumn = $connection->query("SHOW COLUMNS FROM products LIKE 'discount_percent'");
+        if (!$discColumn) {
+            error_log('Could not check product discount_percent schema: ' . $connection->error);
+            return false;
+        }
+
+        if ($discColumn->num_rows === 0 && !$connection->query('ALTER TABLE products ADD discount_percent INT UNSIGNED NOT NULL DEFAULT 0 AFTER original_price')) {
+            error_log('Could not add product discount_percent column: ' . $connection->error);
+            return false;
+        }
+
+        return true;
+    }
+}
+
 if (!function_exists('ensureSalesAnalyticsSchema')) {
     function ensureSalesAnalyticsSchema(mysqli $connection): bool
     {
@@ -192,6 +221,100 @@ if (!function_exists('ensureSalesAnalyticsSchema')) {
         }
 
         return true;
+    }
+}
+
+if (!function_exists('getStoreSettings')) {
+    /**
+     * Retrieve all key-value pairs from system_settings with in-memory caching.
+     */
+    function getStoreSettings(?mysqli $connection = null): array
+    {
+        static $cachedSettings = null;
+        global $conn;
+
+        if ($cachedSettings !== null && $connection === null) {
+            return $cachedSettings;
+        }
+
+        $activeConn = $connection ?? $conn ?? null;
+        $settings = [
+            'store_name' => 'SN STORE',
+            'currency_symbol' => '$',
+            'store_logo_url' => '',
+            'store_contact_url' => 'https://t.me/remsonich',
+            'home_hero_title' => 'គុណភាពខ្ពស់ 100% ម៉ូដទាន់សម័យ',
+            'home_hero_description' => 'ទិញ-លក់សម្លៀកបំពាក់ ម៉ូដ និងទំនិញពេញនិយម ប្រកបដោយសុវត្ថិភាព មានការធានាជូន និងគាំទ្រការទូទាត់គ្រប់ធនាគារក្នុងប្រទេសកម្ពុជា។',
+            'home_banner_url' => '',
+            'telegram_username' => '@remsonich',
+            'support_phone' => '',
+            'support_hours' => '',
+            'store_location' => '',
+            'google_client_id' => '',
+        ];
+
+        if ($activeConn instanceof mysqli && !$activeConn->connect_error) {
+            $res = $activeConn->query("SELECT `setting_name`, `setting_value` FROM `system_settings`");
+            if ($res) {
+                while ($row = $res->fetch_assoc()) {
+                    if (isset($row['setting_name']) && $row['setting_value'] !== null) {
+                        $settings[$row['setting_name']] = (string)$row['setting_value'];
+                    }
+                }
+            }
+        }
+
+        if ($connection === null) {
+            $cachedSettings = $settings;
+        }
+
+        return $settings;
+    }
+}
+
+if (!function_exists('resolveStoreAssetUrl')) {
+    /**
+     * Resolve a store asset URL (logo, banner, image) relative to the calling script.
+     * Works seamlessly whether called from project root, /home/, /admin/, or /customer-service/.
+     */
+    function resolveStoreAssetUrl(?string $path, ?string $context = null): string
+    {
+        $rootDir = realpath(dirname(__DIR__)) ?: dirname(__DIR__);
+        $scriptPath = $_SERVER['SCRIPT_FILENAME'] ?? '';
+        $scriptDir = $scriptPath ? realpath(dirname($scriptPath)) : getcwd();
+
+        $prefix = './';
+        if ($context !== null) {
+            $normalizedContext = strtolower(trim($context, '/\\'));
+            if ($normalizedContext === 'root' || $normalizedContext === '' || $normalizedContext === '.') {
+                $prefix = './';
+            } else {
+                $prefix = '../';
+            }
+        } elseif ($scriptDir && $rootDir) {
+            $normScript = str_replace('\\', '/', $scriptDir);
+            $normRoot = str_replace('\\', '/', $rootDir);
+            if ($normScript === $normRoot) {
+                $prefix = './';
+            } else {
+                $rel = trim(str_replace($normRoot, '', $normScript), '/');
+                $depth = ($rel === '' || $rel === false) ? 0 : count(explode('/', $rel));
+                $prefix = $depth === 0 ? './' : str_repeat('../', $depth);
+            }
+        }
+
+        if ($path === null || trim($path) === '') {
+            return $prefix . 'home/logo/logome.png';
+        }
+
+        $trimmed = trim($path);
+        if (preg_match('~^(https?://|data:|blob:)~i', $trimmed)) {
+            return $trimmed;
+        }
+
+        // Clean relative prefix and attach detected prefix
+        $cleanPath = ltrim(str_replace('\\', '/', $trimmed), './');
+        return $prefix . $cleanPath;
     }
 }
 
