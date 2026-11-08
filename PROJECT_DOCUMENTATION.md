@@ -1,17 +1,19 @@
 # 📘 សៀវភៅគម្រោងបញ្ចប់ការសិក្សា (E-Commerce Project Book)
 ## ប្រព័ន្ធគ្រប់គ្រង និងលក់សម្លៀកបំពាក់ទាន់សម័យតាមប្រព័ន្ធអេឡិចត្រូនិក
-### 4K STORE / SN STORE E-COMMERCE PLATFORM
+### SN STORE E-COMMERCE PLATFORM
 
 ---
 
 ## 1. COVER (ទំព័រក្របមុខ)
 
-* **ឈ្មោះគម្រោង (Project Name):** 4K STORE • Modern Fashion E-Commerce Platform
+* **ឈ្មោះគម្រោង (Project Name):** SN STORE • Modern Fashion E-Commerce Platform
 * **មុខវិជ្ជា (Subject):** Web Development & Database Engineering (E-Commerce Project)
 * **កម្រិតសិក្សា (Level):** ថ្នាក់បរិញ្ញាបត្រ / បរិញ្ញាបត្ររងផ្នែកវិទ្យាសាស្ត្រកុំព្យូទ័រ (Computer Science / IT)
 * **សមាជិកក្រុម / អ្នករៀបចំ (Team Work / Authors):**
-  1. **សុនីច រ៉េម (Sonich Rem)** — Lead Developer & System Architect (GitHub: `remsonich`)
-  2. **ចាន់ កក្កដា (Chan Kakada)** — Frontend Developer & UI/UX Designer
+  1. **REM Sonich (រ៉ែម ស៊ុននិច)** — Team Leader & Full Stack System Architect (GitHub: `remsonich`)
+  2. **NHO Net (ញ៉ូ ណេត)** — Backend & Database Developer
+  3. **ឆៃ សោភា (CHHAI Sophea)** — Frontend Developer & UI/UX Designer
+  4. **SAO Ramorn (សៅ រ៉ាម៉ន)** — Quality Assurance (QA) & System Testing
 * **សាស្ត្រាចារ្យណែនាំ (Lecturer / Advisor):** លោកគ្រូ / អ្នកគ្រូប្រចាំមុខវិជ្ជា E-Commerce System
 * **ឆ្នាំសិក្សា (Academic Year):** 2026 - 2027
 * **កាលបរិច្ឆេទដាក់ជូន (Submission):** សប្តាហ៍ទី ៨ (Midterm 1) & សប្តាហ៍ទី ១៤ (Final Implementation)
@@ -21,10 +23,10 @@
 ## 1. INTRODUCTION (សេចក្តីផ្តើម)
 
 ### 1.1 Project Name (ឈ្មោះគម្រោង)
-**4K STORE (SN STORE)** — វេបសាយពាណិជ្ជកម្មអេឡិចត្រូនិចលក់សម្លៀកបំពាក់ និងគ្រឿងតុបតែងម៉ូដទាន់សម័យ (Modern Curated Fashion Storefront & Backoffice System)។
+**SN STORE** — វេបសាយពាណិជ្ជកម្មអេឡិចត្រូនិចលក់សម្លៀកបំពាក់ និងគ្រឿងតុបតែងម៉ូដទាន់សម័យ (Modern Curated Fashion Storefront & Backoffice System)។
 
 ### 1.2 Project Description (ការពិពណ៌នាអំពីគម្រោង)
-4K STORE គឺជាប្រព័ន្ធ E-Commerce ពេញលេញមួយ (Full-stack Web Application) ដែលត្រូវបានបង្កើតឡើងដើម្បីផ្តល់នូវបទពិសោធន៍ទិញទំនិញតាមអនឡាញដ៏ទំនើប ងាយស្រួល និងមានសុវត្ថិភាពខ្ពស់។ ប្រព័ន្ធនេះចែកចេញជា ២ ផ្នែកសំខាន់ៗ៖
+SN STORE គឺជាប្រព័ន្ធ E-Commerce ពេញលេញមួយ (Full-stack Web Application) ដែលត្រូវបានបង្កើតឡើងដើម្បីផ្តល់នូវបទពិសោធន៍ទិញទំនិញតាមអនឡាញដ៏ទំនើប ងាយស្រួល និងមានសុវត្ថិភាពខ្ពស់។ ប្រព័ន្ធនេះចែកចេញជា ២ ផ្នែកសំខាន់ៗ៖
 1. **Storefront (Client-facing UI):** សម្រាប់អតិថិជនស្វែងរកទំនិញ, មើលព័ត៌មានលម្អិត, គណនាភាគរយបញ្ចុះតម្លៃ, ដាក់ទំនិញក្នុងរទេះ, ធ្វើការកុម្ម៉ង់ទិញ និងទូទាត់ប្រាក់តាមប្រព័ន្ធបាគង KHQR។
 2. **Backoffice Admin Panel:** សម្រាប់ម្ចាស់ហាងគ្រប់គ្រងទំនិញ, ស្តុក, ការបញ្ជាទិញ, ការផ្ទៀងផ្ទាត់ការទូទាត់, អតិថិជន, របាយការណ៍ហិរញ្ញវត្ថុ និងខ្លឹមសារគេហទំព័រទាំង ២ ភាសា (ខ្មែរ-អង់គ្លេស)។
 
@@ -43,11 +45,11 @@
 ## 2. BUSINESS & E-COMMERCE (អាជីវកម្ម និងគំរូពាណិជ្ជកម្មអេឡិចត្រូនិក)
 
 ### 2.1 Business Idea (គំនិតអាជីវកម្ម)
-ទីផ្សារសម្លៀកបំពាក់នៅកម្ពុជាបច្ចុប្បន្នកំពុងមានការរីកចម្រើនយ៉ាងឆាប់រហ័ស ប៉ុន្តែអាជីវកម្មភាគច្រើននៅតែលក់តាមរយៈបណ្តាញសង្គម (Facebook/Telegram) ដោយការឆាតដោយដៃ ដែលជួបការលំបាកក្នុងការគ្រប់គ្រងស្តុក និងការផ្ទៀងផ្ទាត់វិក្កយបត្រ។ 4K STORE ត្រូវបានបង្កើតឡើងដើម្បីធ្វើស្វ័យប្រវត្តិកម្មនៃការលក់ ដោយអតិថិជនអាចជ្រើសរើសទំនិញ មើលស្តុកជាក់ស្តែង បង់ប្រាក់តាម KHQR និងទទួលការជូនដំណឹងតាម Telegram ដោយស្វ័យប្រវត្តិ។
+ទីផ្សារសម្លៀកបំពាក់នៅកម្ពុជាបច្ចុប្បន្នកំពុងមានការរីកចម្រើនយ៉ាងឆាប់រហ័ស ប៉ុន្តែអាជីវកម្មភាគច្រើននៅតែលក់តាមរយៈបណ្តាញសង្គម (Facebook/Telegram) ដោយការឆាតដោយដៃ ដែលជួបការលំបាកក្នុងការគ្រប់គ្រងស្តុក និងការផ្ទៀងផ្ទាត់វិក្កយបត្រ។ SN STORE ត្រូវបានបង្កើតឡើងដើម្បីធ្វើស្វ័យប្រវត្តិកម្មនៃការលក់ ដោយអតិថិជនអាចជ្រើសរើសទំនិញ មើលស្តុកជាក់ស្តែង បង់ប្រាក់តាម KHQR និងទទួលការជូនដំណឹងតាម Telegram ដោយស្វ័យប្រវត្តិ។
 
 ### 2.2 E-Commerce Model (គំរូពាណិជ្ជកម្ម)
 * **Model:** **B2C (Business-to-Consumer)**
-* អាជីវកម្ម 4K STORE លក់ផលិតផលម៉ូដសម្លៀកបំពាក់ដោយផ្ទាល់ទៅកាន់អ្នកប្រើប្រាស់ចុងក្រោយ (Direct Retail to End Consumers)។
+* អាជីវកម្ម SN STORE លក់ផលិតផលម៉ូដសម្លៀកបំពាក់ដោយផ្ទាល់ទៅកាន់អ្នកប្រើប្រាស់ចុងក្រោយ (Direct Retail to End Consumers)។
 
 ### 2.3 Products & Services (ផលិតផល និងសេវាកម្ម)
 * **Men's Fashion:** អាវយឺត, អាវសាច់ក្រណាត់ Flannel, ខោខូវប៊យ, ស្បែកជើង Suede Chelsea Boots។
@@ -423,7 +425,7 @@ erDiagram
 | ល.រ | មុខងារដែលបានតេស្ត (Test Feature) | សកម្មភាពតេស្ត (Test Action) | លទ្ធផលរំពឹងទុក (Expected Result) | ស្ថានភាព |
 | :---: | :--- | :--- | :--- | :---: |
 | **TC-01** | **Customer Registration** | បញ្ចូល Email, Password, ឈ្មោះ និងលេខទូរស័ព្ទ | បង្កើត User ក្នុង DB, Hash Password ដោយ Bcrypt, Login ស្វ័យប្រវត្តិ | **PASS ✅** |
-| **TC-02** | **Customer Login** | ចូលដោយ `kakadachan541@gmail.com` + Password `12345678` | Login ជោគជ័យ, Header បង្ហាញឈ្មោះ Chan Kakada | **PASS ✅** |
+| **TC-02** | **Customer Login** | ចូលដោយ Email/Username + Password `12345678` | Login ជោគជ័យ, Header បង្ហាញឈ្មោះគណនីអតិថិជន និងប៊ូតុង Profile | **PASS ✅** |
 | **TC-03** | **Product Catalog Filtering** | ចុច Filter លើប្រភេទ Men / Women / Accessories | បង្ហាញតែទំនិញក្នុងប្រភេទដែលបានរើស ដោយមិន Reload ទំព័រ | **PASS ✅** |
 | **TC-04** | **Discount Calculation** | ទំនិញតម្លៃ $45.00 តម្លៃដើម $60.00 | បង្ហាញផ្លាកបញ្ចុះតម្លៃ `-25%` ពណ៌ក្រហមស្វ័យប្រវត្តិ | **PASS ✅** |
 | **TC-05** | **Cart Quantity Stepper** | ចុចប៊ូតុង `+` ឬ `-` ក្នុង Cart Drawer | ចំនួនទំនិញ និង Subtotal ផ្លាស់ប្តូរភ្លាមៗ | **PASS ✅** |
@@ -464,3 +466,4 @@ erDiagram
 * ភ្ជាប់ទៅកាន់ Bakong Open API ផ្ទាល់ដើម្បីផ្ទៀងផ្ទាត់ការទូទាត់ប្រាក់បែប Real-Time Webhook (ជំនួសការ Upload វិក្កយបត្រដោយដៃ)។
 * បង្កើត Progressive Web App (PWA) ដើម្បីឱ្យអតិថិជនអាច Install លើទូរស័ព្ទដៃដូចជា Native App។
 * បន្ថែមមុខងារ Product Reviews & Ratings ដើម្បីបង្កើនទំនុកចិត្តអតិថិជនបន្ថែមទៀត។
+

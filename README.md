@@ -1,4 +1,4 @@
-# 🛍️ 4K STORE • Modern Fashion E-Commerce Web Application
+# 🛍️ SN STORE • Modern Fashion E-Commerce Web Application
 > **SN STORE** — គេហទំព័រពាណិជ្ជកម្មអេឡិចត្រូនិចលក់សម្លៀកបំពាក់ទាន់សម័យ និងប្រព័ន្ធគ្រប់គ្រងអាជីវកម្ម (B2C Full-stack E-Commerce Platform)
 
 [![PHP](https://img.shields.io/badge/PHP-8.2-777bb4?style=flat-square&logo=php&logoColor=white)](https://php.net)
@@ -10,12 +10,14 @@
 ---
 
 ## 👥 ព័ត៌មានក្រុមការងារ (Team & Project Info)
-* **ឈ្មោះគម្រោង (Project Name):** 4K STORE • Modern Fashion E-Commerce Platform
+* **ឈ្មោះគម្រោង (Project Name):** SN STORE • Modern Fashion E-Commerce Platform
 * **មុខវិជ្ជា (Subject):** Web Development & Database Engineering (E-Commerce Final Project)
 * **ស្ថាប័ន / ឆ្នាំសិក្សា:** 2026 - 2027
 * **សមាសភាពក្រុម (Authors):**
-  1. **Sonich Rem (ស៊ុននិច រ៉ែម)** — *Lead Developer & System Architect* (GitHub: [@remsonich](https://github.com/remsonich))
-  2. **Chan Kakada (ចាន់ កក្កដា)** — *Frontend Developer & UI/UX Designer*
+  1. **REM Sonich (រ៉ែម ស៊ុននិច)** — *Team Leader & System Architect* (GitHub: [@remsonich](https://github.com/remsonich))
+  2. **NHO Net (ញ៉ូ ណេត)** — *Backend & Database Developer*
+  3. **CHHAI Sophea (ឆៃ សោភា)** — *Frontend Developer & UI/UX Designer*
+  4. **SAO Ramorn (សៅ រ៉ាម៉ន)** — *Quality Assurance (QA) & System Testing*
 * **សៀវភៅគម្រោងពេញលេញ (Full Project Book):**
   - 📖 **[PROJECT_DOCUMENTATION.md](PROJECT_DOCUMENTATION.md)** (ឯកសារផ្លូវការ ១០ ជំពូក តាមលំនាំគ្រូណែនាំ)
   - 🌐 **[PROJECT_BOOK.html](PROJECT_BOOK.html)** (ទម្រង់ HTML អាចបើកក្នុង Browser ចុច `Ctrl + P` រក្សាទុកជា PDF ឬចម្លងចូល Word)
@@ -224,4 +226,4 @@ Ecommerce/
 ---
 
 ## 📜 អាជ្ញាប័ណ្ណ (License)
-គម្រោងនេះត្រូវបានអភិវឌ្ឍឡើងសម្រាប់គោលបំណងសិក្សាស្រាវជ្រាវ (Academic Final Project) ក្រោមការអនុញ្ញាតរបស់សាកលវិទ្យាល័យ និងក្រុមការងារ។ រក្សាសិទ្ធិគ្រប់យ៉ាង © 2026 4K STORE / SN STORE។
+គម្រោងនេះត្រូវបានអភិវឌ្ឍឡើងសម្រាប់គោលបំណងសិក្សាស្រាវជ្រាវ (Academic Final Project) ក្រោមការអនុញ្ញាតរបស់សាកលវិទ្យាល័យ និងក្រុមការងារ។ រក្សាសិទ្ធិគ្រប់យ៉ាង © 2026 SN STORE។
