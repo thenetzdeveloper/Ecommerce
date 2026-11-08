@@ -1,110 +1,227 @@
-# ECOMMERCE
+# 🛍️ 4K STORE • Modern Fashion E-Commerce Web Application
+> **SN STORE** — គេហទំព័រពាណិជ្ជកម្មអេឡិចត្រូនិចលក់សម្លៀកបំពាក់ទាន់សម័យ និងប្រព័ន្ធគ្រប់គ្រងអាជីវកម្ម (B2C Full-stack E-Commerce Platform)
 
-Welcome to the **OUR** Web Application!  
-This platform allows users to buy and sell gaming accounts easily and securely.
-
----
-
-## 🌟 Features
-
-- ✅ Google Login Integration
-- 🛒 Add to Cart and Checkout System
-- 📦 Dynamic Product Listings
-- 📱 Fully Responsive Design
-- 🔔 Admin Notifications via Telegram
-- 📧 Email Notifications via SMTP
-- 🇰🇭 KHQR Top-up Payment Integration
+[![PHP](https://img.shields.io/badge/PHP-8.2-777bb4?style=flat-square&logo=php&logoColor=white)](https://php.net)
+[![MySQL](https://img.shields.io/badge/MySQL-8.0-4479a1?style=flat-square&logo=mysql&logoColor=white)](https://mysql.com)
+[![Bakong KHQR](https://img.shields.io/badge/Payment-Bakong_KHQR-red?style=flat-square)](https://bakong.nbc.gov.kh)
+[![Language](https://img.shields.io/badge/i18n-Khmer%20%7C%20English-success?style=flat-square)](#)
+[![Theme](https://img.shields.io/badge/Theme-Light%20%7C%20Dark-darkgreen?style=flat-square)](#)
 
 ---
 
-## ⚙️ Installation
+## 👥 ព័ត៌មានក្រុមការងារ (Team & Project Info)
+* **ឈ្មោះគម្រោង (Project Name):** 4K STORE • Modern Fashion E-Commerce Platform
+* **មុខវិជ្ជា (Subject):** Web Development & Database Engineering (E-Commerce Final Project)
+* **ស្ថាប័ន / ឆ្នាំសិក្សា:** 2026 - 2027
+* **សមាសភាពក្រុម (Authors):**
+  1. **Sonich Rem (ស៊ុននិច រ៉ែម)** — *Lead Developer & System Architect* (GitHub: [@remsonich](https://github.com/remsonich))
+  2. **Chan Kakada (ចាន់ កក្កដា)** — *Frontend Developer & UI/UX Designer*
+* **សៀវភៅគម្រោងពេញលេញ (Full Project Book):**
+  - 📖 **[PROJECT_DOCUMENTATION.md](PROJECT_DOCUMENTATION.md)** (ឯកសារផ្លូវការ ១០ ជំពូក តាមលំនាំគ្រូណែនាំ)
+  - 🌐 **[PROJECT_BOOK.html](PROJECT_BOOK.html)** (ទម្រង់ HTML អាចបើកក្នុង Browser ចុច `Ctrl + P` រក្សាទុកជា PDF ឬចម្លងចូល Word)
 
-1. Clone the repository:
+---
+
+## 🌟 លក្ខណៈពិសេសសំខាន់ៗ (Key Features)
+
+### 1. Storefront (អតិថិជន / Client UI)
+* **Product Catalog & Dynamic Filter:** ស្វែងរក និងច្រោះផលិតផលតាមប្រភេទ (Men, Women, Accessories) និងលំដាប់តម្លៃ។
+* **Interactive Shopping Cart:** បញ្ចូលកន្ត្រកទំនិញ, កែប្រែចំនួន (+/-), គណនាតម្លៃសរុប និងប្រព័ន្ធបញ្ចុះតម្លៃ Coupon Code។
+* **Bakong KHQR Payment Flow:** បង្កើតកូដ KHQR ស្វ័យប្រវត្តិតាមស្តង់ដារធនាគារជាតិ, ផ្ទាំង Mock Simulation បញ្ជាក់ការទូទាត់ភ្លាមៗ និងទម្រង់ Upload វិក្កយបត្រ (Receipt Slip)។
+* **Authentication System:**
+  - ចុះឈ្មោះ និងចូលប្រើដោយ Email / Password (ការពារដោយ `password_hash` Bcrypt)
+  - Google Sign-In One-Tap & Button Integration (Google Identity Services)
+* **Customer Profile:** មើលប្រវត្តិការបញ្ជាទិញ (Order History), តាមដានស្ថានភាពដឹកជញ្ជូន, កែប្រែព័ត៌មានផ្ទាល់ខ្លួន និងប្ដូរពាក្យសម្ងាត់។
+* **Customer Service & Contact:** ទម្រង់ផ្ញើសារសាកសួរ និងតំណភ្ជាប់ Telegram / Live Support ផ្ទាល់។
+* **i18n & Theming:** គាំទ្រភាសាខ្មែរ និងអង់គ្លេស, ប្ដូរ Light Mode / Dark Mode ភ្លាមៗដោយគ្មានការព្រិចភ្នែក (Zero-flash theme engine)។
+
+### 2. Backoffice Admin Panel (អ្នកគ្រប់គ្រងហាង)
+* **Executive Dashboard:** មើលរបាយការណ៍ចំណូលសរុប (Total Revenue), ចំនួន Orders, តម្លៃទំនិញក្នុងស្តុក និងចំនួនអតិថិជន។
+* **Product Management (CRUD):** បន្ថែម, កែប្រែ, លុប និងគ្រប់គ្រងស្តុកផលិតផល (+/- Stock)។
+* **Order & KHQR Verification:** ពិនិត្យវិក្កយបត្របង់ប្រាក់ KHQR, ផ្ទៀងផ្ទាត់ និងកែប្រែស្ថានភាព Order (`pending`, `paid`, `shipped`, `delivered`, `cancelled`)។
+* **Customer Service Hub:** ឆ្លើយតប និងគ្រប់គ្រងសារដែលអតិថិជនបានផ្ញើមក។
+* **Store Settings & Content CMS:** កែប្រែឈ្មោះហាង, ឡូហ្គោ, លេខទូរស័ព្ទ, Telegram Link និង Page Notes / Announcement Text ផ្ទាល់លើ UI។
+* **Security & Auditing:** ប្រព័ន្ធការពារ Brute-Force Rate Limiting (ចាក់សោរ IP & Identity ពេលព្យាយាមខុសលើស ៥ ដង), CSRF Token Protection និង Admin Activity Audit Trail។
+* **Database Backup:** ទាញយក SQL Backup និងនាំចេញទិន្នន័យបានដោយសុវត្ថិភាព។
+
+---
+
+## 🏗️ រចនាសម្ព័ន្ធបច្ចេកវិទ្យា (System Architecture)
+
+```
+       +-------------------------------------------------------------+
+       |                  CLIENT DEVICES & BROWSERS                  |
+       |             (Responsive: Mobile, Tablet, Desktop)          |
+       +------------------------------+------------------------------+
+                                      | HTTP/HTTPS
+                                      v
+       +-------------------------------------------------------------+
+       |               APACHE WEB SERVER (XAMPP / PROD)              |
+       |  .htaccess Security Headers • Static Assets Caching • Router|
+       +------------------------------+------------------------------+
+                                      |
+         +----------------------------+----------------------------+
+         |                                                         |
+         v                                                         v
++-------------------------------+         +--------------------------------+
+|    STOREFRONT UI (home/)      |         |     BACKOFFICE ADMIN (admin/)  |
+| - index.php (Product Catalog) |         | - index.php (Dashboard & CRUD) |
+| - checkout.php (KHQR Flow)    |         | - security.php (Audit & Logins)|
+| - login.php / profile.php     |         | - operations.php / backup.php  |
+| - customer-service/           |         | - store-management.php (CMS)   |
++---------------+---------------+         +----------------+---------------+
+                |                                          |
+                +---------------------+--------------------+
+                                      |
+                                      v
+       +-------------------------------------------------------------+
+       |                   CORE APPLICATION API (api/)               |
+       |  - db.php (MySQLi Wrapper)      - i18n.php (Khmer/English)  |
+       |  - user-auth.php / admin-auth   - telegram-order.php        |
+       |  - cart.php / products.php      - admin-operations.php      |
+       +------------------------------+------------------------------+
+                                      |
+                    +-----------------+-----------------+
+                    |                                   |
+                    v                                   v
+       +--------------------------+        +--------------------------+
+       |   MYSQL DATABASE (RDBMS) |        |     EXTERNAL SERVICES    |
+       |   - 14 Normalized Tables |        | - Telegram Bot Alerts    |
+       |   - InnoDB Engine        |        | - Google Identity (GIS)  |
+       |   - Foreign Key Cascades |        | - Mock Bakong KHQR Engine|
+       +--------------------------+        +--------------------------+
+```
+
+---
+
+## 🗄️ រចនាសម្ព័ន្ធទិន្នន័យ (Database Schema)
+
+មូលដ្ឋានទិន្នន័យ `ecommerce` ត្រូវបានរៀបចំតាមកម្រិតស្តង់ដារ 3NF (Third Normal Form) ដែលមានតារាងសរុបចំនួន **១៤ តារាង**៖
+
+| ល.រ | ឈ្មោះតារាង (Table) | បរិយាយ និងតួនាទី (Description) | កូនសោរសំខាន់ (PK / FK) |
+|:---:|:---|:---|:---|
+| 1 | `users` | គណនីអតិថិជន (Email, Password, Name, Google ID) | `PK: id` |
+| 2 | `account_sessions` | រក្សាទុក Login Remember Tokens របស់អតិថិជន | `PK: id`, `FK: user_id` |
+| 3 | `admins` | គណនីអ្នកគ្រប់គ្រងប្រព័ន្ធ (Admin & Superadmin) | `PK: id` |
+| 4 | `admin_sessions` | សម័យកាល Session របស់អ្នកគ្រប់គ្រង | `PK: id`, `FK: admin_id` |
+| 5 | `admin_login_attempts` | កត់ត្រាការ Sign-in បរាជ័យដើម្បីការពារ Brute-force | `PK: id` |
+| 6 | `admin_audit_log` | កំណត់ត្រាសកម្មភាពសំខាន់ៗរបស់ Admin | `PK: id`, `FK: admin_id` |
+| 7 | `categories` | ប្រភេទផលិតផល (Men, Women, Accessories) | `PK: id` |
+| 8 | `products` | ព័ត៌មានលម្អិតនៃផលិតផល, តម្លៃ និងចំនួនស្តុក | `PK: id`, `FK: category_id` |
+| 9 | `orders` | បញ្ជីការបញ្ជាទិញ (Total, Status, Payment, Info) | `PK: id`, `FK: user_id` |
+| 10 | `order_items` | មុខទំនិញក្នុង Order នីមួយៗ (Quantity, Price) | `PK: id`, `FK: order_id, product_id` |
+| 11 | `cart_items` | កន្ត្រកទំនិញបណ្ដោះអាសន្នរបស់អតិថិជន | `PK: id`, `FK: user_id, product_id` |
+| 12 | `coupons` | លេខកូដបញ្ចុះតម្លៃ (Discount Percentage / Amount) | `PK: id` |
+| 13 | `customer_messages` | សារទំនាក់ទំនងពីទំព័រ Customer Service | `PK: id`, `FK: user_id` |
+| 14 | `system_settings` | ការកំណត់ហាងទូទៅ (ឈ្មោះហាង, Logo, Telegram) | `PK: id` |
+
+---
+
+## 🧪 លទ្ធផលនៃការធ្វើតេស្ត (Testing & Test Cases)
+
+ប្រព័ន្ធត្រូវបានធ្វើតេស្តផ្ទៀងផ្ទាត់គ្រប់មុខងារស្នូលទាំងអស់ (All 11 Test Cases **PASSED**):
+
+* **TC-01 (Storefront Browsing):** ចូលទំព័រដើម និងមើលទំនិញទាំងអស់ — **PASS**
+* **TC-02 (Category Filter):** ច្រោះផលិតផលតាម Men / Women / Accessories — **PASS**
+* **TC-03 (Customer Registration):** បង្កើតគណនីថ្មីជាមួយ Email និង Password — **PASS**
+* **TC-04 (Customer Sign-In):** ចូលប្រើប្រព័ន្ធជាមួយគណនីអតិថិជន — **PASS**
+* **TC-05 (Shopping Cart):** បញ្ចូលទំនិញទៅកន្ត្រក និងកែប្រែចំនួនទំនិញ — **PASS**
+* **TC-06 (Checkout & KHQR):** បញ្ចូលអាសយដ្ឋាន និងបង្កើតកូដ Bakong KHQR — **PASS**
+* **TC-07 (Payment Confirmation):** បញ្ជាក់ការទូទាត់ និងផ្ញើ Telegram Alert — **PASS**
+* **TC-08 (Admin Authentication):** ចូលប្រើ Dashboard ជាមួយគណនី Admin — **PASS**
+* **TC-09 (Product CRUD):** បន្ថែម, កែប្រែ និងគ្រប់គ្រងស្តុកទំនិញ — **PASS**
+* **TC-10 (Order Management):** ផ្ទៀងផ្ទាត់វិក្កយបត្រ និងផ្លាស់ប្ដូរស្ថានភាព Order — **PASS**
+* **TC-11 (i18n & Theme Switch):** ប្ដូរភាសាខ្មែរ-អង់គ្លេស និង Dark Mode — **PASS**
+
+---
+
+## 🚀 របៀបតម្លើង និងដំណើរការគម្រោង (Setup & Installation)
+
+### 1. តម្រូវការប្រព័ន្ធ (Prerequisites)
+* **Web Server:** Apache (XAMPP / WampServer / Laragon)
+* **PHP:** កំណែ 8.1 ឬខ្ពស់ជាងនេះ (បើក Extensions: `mysqli`, `openssl`, `curl`, `mbstring`)
+* **Database:** MySQL 5.7+ ឬ MariaDB 10.4+
+
+### 2. ជំហានតម្លើង (Step-by-Step Setup)
+
+1. **ទាញយកកូដពី GitHub Repository:**
    ```bash
-   git clone https://github.com/your-username/net-account-seller.git
+   git clone https://github.com/remsonich/E-Commerce_Webiste_Store.git
+   ```
 
-   
-## Move into the project folder:
-cd net-account-seller
+2. **ចម្លងគម្រោងទៅកាន់ថត Web Server:**
+   * សម្រាប់ XAMPP: ដាក់នៅក្នុង `C:/xampp/htdocs/Ecommerce`
 
-## Configure your environment:
-Set database connection values in the process environment or a protected `.env` file:
+3. **តម្លើងមូលដ្ឋានទិន្នន័យ (Import Database):**
+   * បើកកម្មវិធី **phpMyAdmin** (`http://localhost/phpmyadmin`)
+   * បង្កើត Database ថ្មីឈ្មោះ `ecommerce` (Collation: `utf8mb4_unicode_ci`)
+   * ចូលទៅកាន់ផ្ទាំង **Import** រួចជ្រើសរើសឯកសារ:
+     `databases/ecommerce.sql`
+   * ចុច **Go / Import** ដើម្បីបញ្ចូលរចនាសម្ព័ន្ធតារាង និងទិន្នន័យគំរូ។
 
-```dotenv
-APP_ENV=production
-ECOMMERCE_DB_HOST=127.0.0.1
-ECOMMERCE_DB_PORT=3306
-ECOMMERCE_DB_NAME=ecommerce
-ECOMMERCE_DB_USER=ecommerce_app
-ECOMMERCE_DB_PASSWORD=replace-with-a-secret
+4. **កំណត់ការតភ្ជាប់ Database (Configuration):**
+   * ប្រព័ន្ធកំណត់តាមលំនាំដើមក្នុង `api/db.php` សម្រាប់ XAMPP (`localhost`, user: `root`, password: ទទេ)។
+   * ប្រសិនបើចង់ផ្លាស់ប្ដូរ អ្នកអាចបង្កើតឯកសារ `.env` នៅក្នុង Root Directory:
+     ```dotenv
+     APP_ENV=local
+     ECOMMERCE_DB_HOST=localhost
+     ECOMMERCE_DB_NAME=ecommerce
+     ECOMMERCE_DB_USER=root
+     ECOMMERCE_DB_PASSWORD=
+     ```
+
+5. **បើកដំណើរការកម្មវិធី (Run Application):**
+   * 🌐 **ទំព័រអតិថិជន (Storefront):** `http://localhost/Ecommerce/`
+   * ⚙️ **ទំព័រអ្នកគ្រប់គ្រង (Admin Dashboard):** `http://localhost/Ecommerce/admin/`
+
+---
+
+## 🔑 គណនីសម្រាប់តេស្តសាកល្បង (Demo Credentials)
+
+| ផ្នែក (Area) | Username / Email | Password | តួនាទី (Role) |
+|:---|:---|:---|:---|
+| **Admin Dashboard** | `kakadachan541@gmail.com` | `12345678` | System Admin |
+| **Admin Dashboard** | `netsmos100` | `12345678` | Lead Admin |
+| **Storefront Customer**| `kakadachan541@gmail.com` | `12345678` | Verified Customer |
+
+---
+
+## 📁 រចនាសម្ព័ន្ធថតឯកសារ (Directory Tree)
+
+```text
+Ecommerce/
+├── admin/                      # Backoffice Admin Dashboard
+│   ├── index.php               # Admin Main Router & Catalog
+│   ├── primary-navigation.php  # Sidebar & Navigation
+│   ├── operations.php          # Order Verification & Invoicing
+│   ├── security.php            # Audit Trail & Session Security
+│   ├── store-management.php    # Store CMS & Content Settings
+│   └── backup.php              # Database Backup Utility
+├── api/                        # Backend APIs & Business Logic
+│   ├── db.php                  # Database Connection (MySQLi)
+│   ├── admin-auth.php          # Admin Authentication & Lockout Engine
+│   ├── user-auth.php           # Customer Auth & Google One-Tap
+│   ├── cart.php                # Shopping Cart API
+│   ├── products.php            # Products API & Filter
+│   ├── telegram-order.php      # Telegram Bot Notifications
+│   └── i18n.php                # Language Translation (KM/EN)
+├── customer-service/           # Customer Support & Inquiries
+│   └── index.php               # Contact Form & Help Center
+├── databases/                  # Database Scripts
+│   └── ecommerce.sql           # Complete Database Dump
+├── home/                       # Storefront Client Pages
+│   ├── index.php               # Homepage & Product Showcase
+│   ├── checkout.php            # Order Placement & KHQR Flow
+│   ├── login.php               # Login & Register Modal/Page
+│   ├── profile.php             # User Profile & Order History
+│   └── navbar.php              # Store Header & Cart Drawer
+├── img/                        # Product & Banner Images
+├── PROJECT_DOCUMENTATION.md    # Complete 10-Chapter Academic Project Book
+├── PROJECT_BOOK.html           # Printable Academic Book (PDF/Word ready)
+└── README.md                   # Repository Documentation
 ```
 
-When `APP_ENV` is not `local`, the application refuses missing credentials and the MySQL `root` account. The local-only fallback (`localhost`, `root`, empty password) exists for XAMPP compatibility. Prefer environment variables or a secret store in production; keep `.env` outside the document root when possible. The included Apache rules deny access to dotfiles and `databases/`; configure equivalent denials when using Nginx or another web server. Apply the base `databases/ecommerce.sql` only to a new/empty database; it contains destructive `DROP TABLE` statements. For an existing database, apply versioned scripts from `databases/migrations/` with a migration/DBA account.
+---
 
-After applying the base schema and migrations, give the web application a dedicated database account scoped to `ecommerce` with only the required data privileges (`SELECT`, `INSERT`, `UPDATE`, `DELETE`). Schema helpers now skip `CREATE TABLE` for existing tables; missing columns/tables still need to be provisioned by a migration account before deploying the DML-only account.
-
-Google OAuth credentials
-Telegram Bot Token
-Email SMTP settings
-
-### Telegram order notifications
-
-Set the following values in the project-root `.env` file. The bot must be started by the recipient account before it can send that account a message.
-
-```dotenv
-Telegram_bot_token=YOUR_BOT_TOKEN
-Telegram_chat_id=YOUR_CHAT_ID
-```
-
-Order notifications contain the product name, price, customer name, phone number, location, and uploaded payment receipt (JPG, PNG, WEBP, GIF, HEIC, HEIF, or PDF up to 5 MB). Receipts are forwarded to Telegram and retained outside the public document root for authenticated admin review. Set `ECOMMERCE_PRIVATE_RECEIPT_DIR` to choose another private writable directory; the application rejects paths inside the public document root. Never request or send account passwords or two-factor authentication codes. Keep `.env` private and do not commit it.
-
-### Product inventory
-
-Products have a non-negative stock amount managed from the admin dashboard. Inventory is reserved during checkout to prevent overselling and restored if Telegram rejects the notification or an admin cancels the order. Products with zero stock are hidden from the storefront and cannot be ordered. Each product has an editable low-stock threshold, and the admin inventory page records stock changes, reasons, and the responsible admin. The stock and threshold columns are added automatically when the site is opened; existing products start with a threshold of 5.
-
-### Admin sales and activity reports
-
-The admin dashboard requires a username and password from the `admins` table. Online orders are initially Pending, and an uploaded receipt never automatically marks an order Paid. An admin must independently verify the transaction ID and exact amount in the order review before the payment becomes verified. Rejections and refunds are recorded in the order history; refunds are records of transfers completed outside this app. The operations page provides order search and history, customer search/notes and phone-based checkout blocking, inventory management, daily/weekly/monthly reports, and Excel-compatible CSV exports. Existing orders without a recorded payment state remain Pending verification.
-
-The storefront checkout submits one product per order through `api/telegram-order.php`; `api/cart.php` and `api/checkout.php` are unused placeholders and do not implement cart or checkout behavior. A multi-product cart would require a separate order-items design and is not included in the current flow.
-
-### Promotions, store settings, and notifications
-
-The Admin menu groups Dashboard, Products & Inventory, Orders & Payments, Customers & Customer Service, Reports & Analytics, Promotions & Homepage, Staff/Security, and Database Backup & Settings. Staff menu access is permission-gated. Admins can create percent/fixed coupons with start/expiry dates, minimum subtotal, and a usage cap. Checkout recalculates and reserves a coupon under a database row lock; payment verification and reports use the discounted amount. Store name, logo/contact URLs, currency display symbol, homepage headline/description, and hero banner URL are configurable from Admin. Currency changes affect display only; they do not convert stored prices or payments. Admin notifications are recorded for saved new orders and low-stock threshold crossings.
-
-### Database backups
-
-Admin backups are encrypted using AES-256-GCM and stored outside the web root. Production must set `ECOMMERCE_BACKUP_KEY` to a persistent random 32-byte key encoded as 64 hex characters or base64; retain it securely and preserve it when rotating deployments, or those backups cannot be restored. Local mode generates a mode-0600 `.backup-key` file in the private backup directory. `ECOMMERCE_BACKUP_DIR` can choose another private writable directory. Restore accepts only this app's encrypted JSON format, the same database name, a valid checksum/authentication tag, the current Admin password, and the typed confirmation `RESTORE`; it replaces rows only in matching tables and does not change schema. Keep additional off-host backup copies for disaster recovery, and store the encryption key separately from those copies.
-
-### Admin security and audit
-
-Open **Security & audit** from the admin dashboard to create Admin or Staff accounts, assign Staff permissions by section, review active sessions, and revoke sessions. Admins can change their own password; passwords must be at least 12 characters. Sessions expire after 30 minutes idle or 12 hours total. Login failures are rate-limited to five attempts per username or 20 per IP address in 15 minutes; login, account, session, customer-message deletion, and product activity are recorded. Admin state-changing forms require CSRF tokens, and privileged pages verify permissions server-side. The security schema is added automatically without deleting existing admin accounts. Use HTTPS in production so admin session cookies are marked Secure; configure the web server to supply the real client address as `REMOTE_ADDR` when operating behind a trusted proxy.
-
-Set each product's cost price in the dashboard to calculate estimated profit. Cost is optional when unknown; sales without a recorded cost are excluded from known-cost profit totals rather than being treated as zero-cost profit. Analytics, order history, customer profile, stock audit tables, and sales metadata columns are included in `databases/ecommerce.sql`. The security changes have an idempotent, additive migration at `databases/migrations/20261027_001_admin_security.sql`; it can safely skip columns/tables that the app has already created. Do not import the destructive initialization dump over a live database.
-
-Store-management schema additions use `databases/migrations/20261027_002_store_features.sql`. Apply versioned migrations with a migration/DBA account before deploying the web app with its restricted database user.
-
-## Start local server (example using XAMPP or similar):
-Place in htdocs
-Access via http://localhost/net-account-seller
-
-🛠 Tech Stack
-Frontend: HTML, CSS, JavaScript
--Backend: PHP 8+
--Database: MySQL
--Auth: Google OAuth 2.0
--Notifications: Telegram API + PHPMailer
-
-🤝 Contributing
-Contributions are welcome!
-Please fork the repo and submit a pull request.
-Make sure to follow best practices and comment your code.
-
-📜 License
-This project is licensed under the MIT License.
-
-📧 Contact
-For inquiries or support, contact us via Telegram or email.
-
-
-Would you like the ASCII art “NET” in a different style, or should I help you generate a large banner-style title using other characters like `#`, `=`, or Unicode art?
+## 📜 អាជ្ញាប័ណ្ណ (License)
+គម្រោងនេះត្រូវបានអភិវឌ្ឍឡើងសម្រាប់គោលបំណងសិក្សាស្រាវជ្រាវ (Academic Final Project) ក្រោមការអនុញ្ញាតរបស់សាកលវិទ្យាល័យ និងក្រុមការងារ។ រក្សាសិទ្ធិគ្រប់យ៉ាង © 2026 4K STORE / SN STORE។
